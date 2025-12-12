@@ -11,21 +11,7 @@ namespace ray = raylib;
 
 Maze::Maze(Vector2 position) {
 	this->position = position;
-
-	for (int row = 0; row < MAZE_ROWS; row++) {
-		for (int col = 0; col < MAZE_COLS; col++) {
-			horizontal_walls[row][col] = false;
-			vertical_walls[row][col] = false;
-		}
-
-		vertical_walls[row][0] = true;
-		vertical_walls[row][MAZE_COLS] = true;
-	}
-
-	for (int col = 0; col < MAZE_COLS; col++) {
-		horizontal_walls[0][col] = true;
-		horizontal_walls[MAZE_ROWS][col] = true;
-	}
+	Clear();
 }
 
 Maze::~Maze() {
@@ -77,6 +63,23 @@ void Maze::SetWalls(Point from_corner, Point to_corner, bool state) {
 		for (int row = top; row < down; row++) {
 			vertical_walls[row][to_corner.x] = state;
 		}
+	}
+}
+
+void Maze::Clear() {
+	for (int row = 0; row < MAZE_ROWS; row++) {
+		for (int col = 0; col < MAZE_COLS; col++) {
+			horizontal_walls[row][col] = false;
+			vertical_walls[row][col] = false;
+		}
+
+		vertical_walls[row][0] = true;
+		vertical_walls[row][MAZE_COLS] = true;
+	}
+
+	for (int col = 0; col < MAZE_COLS; col++) {
+		horizontal_walls[0][col] = true;
+		horizontal_walls[MAZE_ROWS][col] = true;
 	}
 }
 

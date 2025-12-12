@@ -37,6 +37,7 @@ ray::Rectangle ui_layout_recs[] = {
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 50.0f, 280.0f, 50.0f), // Load Maze Layout Button
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 110.0f, 280.0f, 50.0f), // Save Maze Layout Button
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 190.0f, 280.0f, 50.0f), // Edit Maze Toggle
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 250.0f, 280.0f, 50.0f), // Clear Maze
 };
 
 void PreUpdate() {
@@ -137,6 +138,9 @@ void DrawUI() {
 		state = SAVING_MAZE;
 	}
 	GuiToggle(ui_layout_recs[3], "EDIT MAZE", &maze_is_editable);
+	if (GuiButton(ui_layout_recs[4], "CLEAR WALLS")) {
+		maze.Clear();
+	}
 
 	GuiWindowFileDialog(&file_dialog_state);
 }

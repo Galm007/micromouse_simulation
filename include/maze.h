@@ -29,6 +29,7 @@ public:
 
 	static bool IsWallValid(Point from_corner, Point to_corner);
 	void SetWalls(Point from_corner, Point to_corner, bool state);
+	void Clear();
 
 	void Draw(Color wall_clr, Color dot_clr);
 
