@@ -122,17 +122,22 @@ int main() {
 
 		if (maze_is_editable) {
 			Vector2 closest_corner_pos = maze.CornerToPos(closest_corner_to_mouse);
+			Vector2 edit_wall_pos = maze.CornerToPos(edit_wall_from);
+
 			if (maze.Contains(GetMousePosition())) {
 				DrawCircleLinesV(closest_corner_pos, 6.0f, BLACK);
 			}
 
-			Vector2 edit_wall_pos = maze.CornerToPos(edit_wall_from);
-			if (maze.Contains(GetMousePosition()) && (state == PLACING_WALL || state == DELETING_WALL)) {
-				DrawLineV(
-					edit_wall_pos,
-					closest_corner_pos,
-					Maze::IsWallValid(edit_wall_from, closest_corner_to_mouse) ? GREEN : RED
-				);
+			if (state == PLACING_WALL || state == DELETING_WALL) {
+				if (maze.Contains(GetMousePosition())) {
+					DrawLineV(
+						edit_wall_pos,
+						closest_corner_pos,
+						Maze::IsWallValid(edit_wall_from, closest_corner_to_mouse) ? GREEN : RED
+					);
+				} else {
+					DrawLineV(edit_wall_pos, GetMousePosition(), RED);
+				}
 				DrawCircleLinesV(edit_wall_pos, 6.0f, BLACK);
 			}
 		}
