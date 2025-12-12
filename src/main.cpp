@@ -64,7 +64,7 @@ void DeletingWall_Update() {
 }
 
 void PanningView_Update() {
-	if (maze.Contains(GetMousePosition()) && IsMouseButtonReleased(MOUSE_BUTTON_MIDDLE)) {
+	if (IsMouseButtonReleased(MOUSE_BUTTON_MIDDLE)) {
 		state = IDLE;
 		return;
 	}
