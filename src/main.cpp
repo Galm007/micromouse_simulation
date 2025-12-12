@@ -1,5 +1,3 @@
-#include "Rectangle.hpp"
-#include <cstring>
 #include <iostream>
 #include <raylib.h>
 #include <raylib-cpp.hpp>
@@ -96,16 +94,20 @@ void PanningView_Update() {
 void FileDialogLogic() {
 	if (file_dialog_state.SelectFilePressed) {
 		if (IsFileExtension(file_dialog_state.fileNameText, ".maz")) {
-			maze_filename = std::string(file_dialog_state.dirPathText)
+			std::string filename = std::string(file_dialog_state.dirPathText)
 				.append("/")
 				.append(file_dialog_state.fileNameText);
 
 			if (state == SAVING_MAZE) {
-				file_dialog_state.saveFileMode = true;
-				maze.SaveToFile(maze_filename);
+				maze.SaveToFile(filename);
+				maze_filename = filename;
 			} else if (state == LOADING_MAZE) {
-				file_dialog_state.saveFileMode = false;
-				maze.LoadFromFile(maze_filename);
+				if (ray::FileExists(filename)) {
+					maze.LoadFromFile(filename);
+					maze_filename = filename;
+				} else {
+					std::cout << "Unable to open file: " << filename << std::endl;
+				}
 			}
 		} else {
 			std::cout << "Invalid filetype!" << std::endl;
@@ -158,6 +160,7 @@ int main(int argc, char** argv) {
 
 	file_dialog_state = InitGuiWindowFileDialog(GetWorkingDirectory());
 	file_dialog_state.windowBounds = ray::Rectangle(100.0f, 250.0f, 1000.0f, 500.0f);
+	file_dialog_state.saveFileMode = true;
 
 	while (!window.ShouldClose()) {
 		float ft = GetFrameTime();
