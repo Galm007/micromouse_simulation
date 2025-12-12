@@ -73,7 +73,11 @@ int main() {
 
 		Vector2 place_wall_pos = maze.CornerToPos(place_wall_from);
 		if (maze.Contains(GetMousePosition()) && state == PLACING_WALL) {
-			DrawLineV(place_wall_pos, closest_corner_pos, BLACK);
+			DrawLineV(
+				place_wall_pos,
+				closest_corner_pos,
+				Maze::IsWallValid(place_wall_from, closest_corner_to_mouse) ? GREEN : RED
+			);
 			DrawCircleLinesV(place_wall_pos, 6.0f, BLACK);
 		}
 
