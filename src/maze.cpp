@@ -58,8 +58,8 @@ Vector2 Maze::CornerToPos(Point coord) {
 }
 
 bool Maze::IsWallValid(Point from_corner, Point to_corner) {
-	return (from_corner.y == to_corner.y && from_corner.x != to_corner.x)
-		|| (from_corner.y != to_corner.y && from_corner.x == to_corner.x);
+	return (from_corner.y == to_corner.y && from_corner.x != to_corner.x && to_corner.y != 0 && to_corner.y != MAZE_ROWS)
+		|| (from_corner.y != to_corner.y && from_corner.x == to_corner.x && to_corner.x != 0 && to_corner.x != MAZE_COLS);
 }
 
 void Maze::SetWalls(Point from_corner, Point to_corner, bool state) {
