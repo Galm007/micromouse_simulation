@@ -32,10 +32,6 @@ Maze::~Maze() {
 
 }
 
-Vector2 Maze::GetPosition() {
-	return position;
-}
-
 bool Maze::Contains(Vector2 pos) {
 	return !(pos.x < position.x
 		|| pos.x > position.x + MAZE_COLS * MAZE_CELL_SIZE

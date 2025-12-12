@@ -14,7 +14,8 @@ namespace ray = raylib;
 enum ApplicationState {
 	IDLE,
 	PLACING_WALL,
-	DELETING_WALL
+	DELETING_WALL,
+	PANNING_VIEW
 };
 
 ApplicationState state = IDLE;
@@ -39,10 +40,14 @@ void Idle_Update() {
 			return;
 		}
 	}
+
+	if (IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE)) {
+		state = PANNING_VIEW;
+		return;
+	}
 }
 
 void PlacingWall_Update() {
-	Vector2 maze_pos = maze.GetPosition();
 	if (maze.Contains(GetMousePosition()) && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
 		maze.SetWalls(edit_wall_from, closest_corner_to_mouse, true);
 		state = IDLE;
@@ -51,12 +56,19 @@ void PlacingWall_Update() {
 }
 
 void DeletingWall_Update() {
-	Vector2 maze_pos = maze.GetPosition();
 	if (maze.Contains(GetMousePosition()) && IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
 		maze.SetWalls(edit_wall_from, closest_corner_to_mouse, false);
 		state = IDLE;
 		return;
 	}
+}
+
+void PanningView_Update() {
+	if (maze.Contains(GetMousePosition()) && IsMouseButtonReleased(MOUSE_BUTTON_MIDDLE)) {
+		state = IDLE;
+		return;
+	}
+	maze.position += GetMouseDelta();
 }
 
 int main() {
@@ -78,6 +90,9 @@ int main() {
 			break;
 		case DELETING_WALL:
 			DeletingWall_Update();
+			break;
+		case PANNING_VIEW:
+			PanningView_Update();
 			break;
 		}
 

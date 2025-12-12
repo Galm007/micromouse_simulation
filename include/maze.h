@@ -2,8 +2,11 @@
 
 #include <string>
 #include <raylib.h>
+#include <raylib-cpp.hpp>
 
 #include "point.h"
+
+namespace ray = raylib;
 
 #define MAZE_ROWS 16
 #define MAZE_COLS 16
@@ -13,13 +16,12 @@ class Maze {
 private:
 	bool horizontal_walls[MAZE_ROWS + 1][MAZE_COLS];
 	bool vertical_walls[MAZE_ROWS][MAZE_COLS + 1];
-	Vector2 position;
 	
 public:
+	ray::Vector2 position;
+
 	Maze(Vector2 position);
 	~Maze();
-
-	Vector2 GetPosition();
 
 	bool Contains(Vector2 pos);
 	Point ClosestCornerTo(Vector2 pos);
