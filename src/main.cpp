@@ -1,9 +1,12 @@
+#include "Rectangle.hpp"
+#include <cstring>
 #include <iostream>
 #include <raylib.h>
 #include <raylib-cpp.hpp>
 
 #define RAYGUI_IMPLEMENTATION
-#include <raygui.h>
+#define GUI_WINDOW_FILE_DIALOG_IMPLEMENTATION
+#include <gui_window_file_dialog.h>
 
 #include "point.h"
 #include "maze.h"
@@ -12,26 +15,30 @@ namespace ray = raylib;
 
 #define SCREEN_WIDTH 1200
 #define SCREEN_HEIGHT 1000
-#define SCALE 4
 
 enum ApplicationState {
 	IDLE,
 	PLACING_WALL,
 	DELETING_WALL,
-	PANNING_VIEW
+	PANNING_VIEW,
+	SAVING_MAZE,
+	LOADING_MAZE
 };
 
-std::string maze_filename = "maze.maz";
+std::string maze_filename;
 ApplicationState state = IDLE;
 Maze maze = Maze(ray::Vector2(50.0f, 100.0f));
 Point closest_corner_to_mouse = Point(0);
 Point edit_wall_from = Point(0);
 bool maze_is_editable = false;
 
+GuiWindowFileDialogState file_dialog_state;
 Vector2 ui_anchor = { SCREEN_WIDTH - 300.0f, 0.0f };
 ray::Rectangle ui_layout_recs[] = {
-	ray::Rectangle(ui_anchor.x, ui_anchor.y, 300.0f, SCREEN_HEIGHT),
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 50.0f, 280.0f, 50.0f)
+	ray::Rectangle(ui_anchor.x, ui_anchor.y, 300.0f, SCREEN_HEIGHT), // Panel
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 50.0f, 280.0f, 50.0f), // Load Maze Layout Button
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 110.0f, 280.0f, 50.0f), // Save Maze Layout Button
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 190.0f, 280.0f, 50.0f), // Edit Maze Toggle
 };
 
 void PreUpdate() {
@@ -39,22 +46,26 @@ void PreUpdate() {
 }
 
 void Idle_Update() {
-	if (maze_is_editable && maze.Contains(GetMousePosition())) {
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-			edit_wall_from = closest_corner_to_mouse;
-			state = PLACING_WALL;
-			return;
-		}
-		if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-			edit_wall_from = closest_corner_to_mouse;
-			state = DELETING_WALL;
-			return;
-		}
-	}
+	Vector2 mouse = GetMousePosition();
 
-	if (IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE)) {
-		state = PANNING_VIEW;
-		return;
+	if (mouse.x < ui_anchor.x) {
+		if (maze_is_editable && maze.Contains(GetMousePosition())) {
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+				edit_wall_from = closest_corner_to_mouse;
+				state = PLACING_WALL;
+				return;
+			}
+			if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+				edit_wall_from = closest_corner_to_mouse;
+				state = DELETING_WALL;
+				return;
+			}
+		}
+
+		if (IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE)) {
+			state = PANNING_VIEW;
+			return;
+		}
 	}
 }
 
@@ -82,19 +93,71 @@ void PanningView_Update() {
 	maze.position += GetMouseDelta();
 }
 
+void FileDialogLogic() {
+	if (file_dialog_state.SelectFilePressed) {
+		if (IsFileExtension(file_dialog_state.fileNameText, ".maz")) {
+			maze_filename = std::string(file_dialog_state.dirPathText)
+				.append("/")
+				.append(file_dialog_state.fileNameText);
+
+			if (state == SAVING_MAZE) {
+				file_dialog_state.saveFileMode = true;
+				maze.SaveToFile(maze_filename);
+			} else if (state == LOADING_MAZE) {
+				file_dialog_state.saveFileMode = false;
+				maze.LoadFromFile(maze_filename);
+			}
+		} else {
+			std::cout << "Invalid filetype!" << std::endl;
+		}
+
+		file_dialog_state.SelectFilePressed = false;
+		state = IDLE;
+		return;
+	}
+
+	if (!file_dialog_state.windowActive) {
+		state = IDLE;
+		return;
+	}
+}
+
 void DrawUI() {
 	GuiLabel(ray::Rectangle(20.0f, 10.0f, SCREEN_WIDTH, 50.0f), std::string("File: ").append(maze_filename).c_str());
 
-	GuiPanel(ui_layout_recs[0], maze_filename.c_str());
-	GuiToggle(ui_layout_recs[1], "EDIT MAZE", &maze_is_editable);
+	GuiPanel(ui_layout_recs[0], "Micromouse Simulator");
+	if (GuiButton(ui_layout_recs[1], "LOAD MAZE LAYOUT")) {
+		file_dialog_state.windowActive = true;
+		state = LOADING_MAZE;
+	}
+	if (GuiButton(ui_layout_recs[2], "SAVE MAZE LAYOUT")) {
+		file_dialog_state.windowActive = true;
+		state = SAVING_MAZE;
+	}
+	GuiToggle(ui_layout_recs[3], "EDIT MAZE", &maze_is_editable);
+
+	GuiWindowFileDialog(&file_dialog_state);
 }
 
-int main() {
-	ray::Window window = ray::Window(SCREEN_WIDTH, SCREEN_HEIGHT, "Invaders");
+int main(int argc, char** argv) {
+	ray::Window window = ray::Window(SCREEN_WIDTH, SCREEN_HEIGHT, "Micromouse");
 	window.SetTargetFPS(60);
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 20);
 
-	maze.LoadFromFile(maze_filename);
+	if (argc == 1) {
+		std::cout << "Restoring previous session..." << std::endl;
+		maze_filename = "backup.maz";
+		maze.LoadFromFile(maze_filename);
+	} else if (argc == 2) {
+		maze_filename = argv[1];
+		maze.LoadFromFile(maze_filename);
+	} else {
+		std::cout << "Too many input arguments!" << std::endl;
+		return 1;
+	}
+
+	file_dialog_state = InitGuiWindowFileDialog(GetWorkingDirectory());
+	file_dialog_state.windowBounds = ray::Rectangle(100.0f, 250.0f, 1000.0f, 500.0f);
 
 	while (!window.ShouldClose()) {
 		float ft = GetFrameTime();
@@ -112,6 +175,10 @@ int main() {
 			break;
 		case PANNING_VIEW:
 			PanningView_Update();
+			break;
+		case SAVING_MAZE:
+		case LOADING_MAZE:
+			FileDialogLogic();
 			break;
 		}
 
@@ -147,7 +214,7 @@ int main() {
 		EndDrawing();
 	}
 
-	maze.SaveToFile(maze_filename);
+	maze.SaveToFile("backup.maz");
 
 	return 0;
 }

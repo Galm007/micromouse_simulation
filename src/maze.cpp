@@ -143,6 +143,8 @@ int Maze::SaveToFile(std::string filename) {
 		file << line << '\n';
 	}
 
+	std::cout << "Saved maze layout to: " << filename << std::endl;
+
 	file.close();
 	return 1;
 }
@@ -195,6 +197,8 @@ int Maze::LoadFromFile(std::string filename) {
 		}
 		row++;
 	}
+
+	std::cout << "Loaded maze layout: " << filename << std::endl;
 
 	file.close();
 	return 1;
