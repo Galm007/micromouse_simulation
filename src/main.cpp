@@ -13,30 +13,47 @@ namespace ray = raylib;
 
 enum ApplicationState {
 	IDLE,
-	PLACING_WALL
+	PLACING_WALL,
+	DELETING_WALL
 };
 
 ApplicationState state = IDLE;
 Maze maze = Maze(ray::Vector2(50.0f, 50.0f));
 Point closest_corner_to_mouse = Point(0);
-Point place_wall_from = Point(0);
+Point edit_wall_from = Point(0);
 
 void PreUpdate() {
 	closest_corner_to_mouse = maze.ClosestCornerTo(GetMousePosition());
 }
 
 void Idle_Update() {
-	if (maze.Contains(GetMousePosition()) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-		place_wall_from = closest_corner_to_mouse;
-		state = PLACING_WALL;
-		return;
+	if (maze.Contains(GetMousePosition())) {
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+			edit_wall_from = closest_corner_to_mouse;
+			state = PLACING_WALL;
+			return;
+		}
+		if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+			edit_wall_from = closest_corner_to_mouse;
+			state = DELETING_WALL;
+			return;
+		}
 	}
 }
 
 void PlacingWall_Update() {
 	Vector2 maze_pos = maze.GetPosition();
 	if (maze.Contains(GetMousePosition()) && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-		maze.AddWall(place_wall_from, closest_corner_to_mouse);
+		maze.SetWalls(edit_wall_from, closest_corner_to_mouse, true);
+		state = IDLE;
+		return;
+	}
+}
+
+void DeletingWall_Update() {
+	Vector2 maze_pos = maze.GetPosition();
+	if (maze.Contains(GetMousePosition()) && IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
+		maze.SetWalls(edit_wall_from, closest_corner_to_mouse, false);
 		state = IDLE;
 		return;
 	}
@@ -59,6 +76,9 @@ int main() {
 		case PLACING_WALL:
 			PlacingWall_Update();
 			break;
+		case DELETING_WALL:
+			DeletingWall_Update();
+			break;
 		}
 
 		BeginDrawing();
@@ -71,14 +91,14 @@ int main() {
 			DrawCircleLinesV(closest_corner_pos, 6.0f, BLACK);
 		}
 
-		Vector2 place_wall_pos = maze.CornerToPos(place_wall_from);
-		if (maze.Contains(GetMousePosition()) && state == PLACING_WALL) {
+		Vector2 edit_wall_pos = maze.CornerToPos(edit_wall_from);
+		if (maze.Contains(GetMousePosition()) && (state == PLACING_WALL || state == DELETING_WALL)) {
 			DrawLineV(
-				place_wall_pos,
+				edit_wall_pos,
 				closest_corner_pos,
-				Maze::IsWallValid(place_wall_from, closest_corner_to_mouse) ? GREEN : RED
+				Maze::IsWallValid(edit_wall_from, closest_corner_to_mouse) ? GREEN : RED
 			);
-			DrawCircleLinesV(place_wall_pos, 6.0f, BLACK);
+			DrawCircleLinesV(edit_wall_pos, 6.0f, BLACK);
 		}
 
 		EndDrawing();

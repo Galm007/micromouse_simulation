@@ -66,20 +66,20 @@ bool Maze::IsWallValid(Point from_corner, Point to_corner) {
 		|| (from_corner.y != to_corner.y && from_corner.x == to_corner.x);
 }
 
-void Maze::AddWall(Point from_corner, Point to_corner) {
+void Maze::SetWalls(Point from_corner, Point to_corner, bool state) {
 	if (from_corner.y == to_corner.y) {
 		int left = std::min(from_corner.x, to_corner.x);
 		int right = std::max(from_corner.x, to_corner.x);
 
 		for (int col = left; col < right; col++) {
-			horizontal_walls[to_corner.y][col] = true;
+			horizontal_walls[to_corner.y][col] = state;
 		}
 	} else if (from_corner.x == to_corner.x) {
 		int top = std::min(from_corner.y, to_corner.y);
 		int down = std::max(from_corner.y, to_corner.y);
 
 		for (int row = top; row < down; row++) {
-			vertical_walls[row][to_corner.x] = true;
+			vertical_walls[row][to_corner.x] = state;
 		}
 	}
 }

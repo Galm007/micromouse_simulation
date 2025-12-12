@@ -26,7 +26,7 @@ public:
 	Vector2 CornerToPos(Point coord);
 
 	static bool IsWallValid(Point from_corner, Point to_corner);
-	void AddWall(Point from_corner, Point to_corner);
+	void SetWalls(Point from_corner, Point to_corner, bool state);
 
 	void Draw(Color wall_clr, Color dot_clr);
 
