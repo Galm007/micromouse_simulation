@@ -1,5 +1,9 @@
 #pragma once
 
+#include <raylib-cpp.hpp>
+
+namespace ray = raylib;
+
 class Point {
 public:
 	int x, y;
@@ -7,4 +11,6 @@ public:
 	Point(int x, int y);
 	Point(int a);
 	~Point();
+
+	ray::Vector2 ToVec2();
 };

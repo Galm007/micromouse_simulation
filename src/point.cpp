@@ -12,3 +12,7 @@ Point::Point(int a) {
 Point::~Point() {
 
 }
+
+ray::Vector2 Point::ToVec2() {
+	return ray::Vector2(x, y);
+}

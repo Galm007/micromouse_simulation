@@ -8,6 +8,7 @@
 
 #include "point.h"
 #include "maze.h"
+#include "mouse.h"
 
 namespace ray = raylib;
 
@@ -23,12 +24,15 @@ enum ApplicationState {
 	LOADING_MAZE
 };
 
-std::string maze_filename;
 ApplicationState state = IDLE;
+
+std::string maze_filename;
 Maze maze = Maze(ray::Vector2(50.0f, 100.0f));
 Point closest_corner_to_mouse = Point(0);
 Point edit_wall_from = Point(0);
 bool maze_is_editable = false;
+
+Mouse mouse = Mouse(&maze, Point(0, 0));
 
 GuiWindowFileDialogState file_dialog_state;
 Vector2 ui_anchor = { SCREEN_WIDTH - 300.0f, 0.0f };
@@ -36,8 +40,8 @@ ray::Rectangle ui_layout_recs[] = {
 	ray::Rectangle(ui_anchor.x, ui_anchor.y, 300.0f, SCREEN_HEIGHT), // Panel
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 50.0f, 280.0f, 50.0f), // Load Maze Layout Button
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 110.0f, 280.0f, 50.0f), // Save Maze Layout Button
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 190.0f, 280.0f, 50.0f), // Edit Maze Toggle
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 250.0f, 280.0f, 50.0f), // Clear Maze
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 930.0f, 280.0f, 50.0f), // Edit Maze Toggle
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 870.0f, 280.0f, 50.0f), // Clear Maze
 };
 
 void PreUpdate() {
@@ -90,6 +94,7 @@ void PanningView_Update() {
 		return;
 	}
 	maze.position += GetMouseDelta();
+	mouse.position += GetMouseDelta();
 }
 
 void FileDialogLogic() {
@@ -189,6 +194,9 @@ int main(int argc, char** argv) {
 			break;
 		}
 
+		mouse.Move(40 * GetFrameTime());
+		mouse.angle += GetFrameTime();
+
 		BeginDrawing();
 		window.ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
@@ -215,6 +223,8 @@ int main(int argc, char** argv) {
 				DrawCircleLinesV(edit_wall_pos, 6.0f, BLACK);
 			}
 		}
+
+		mouse.Draw();
 
 		DrawUI();
 
