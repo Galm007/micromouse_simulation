@@ -136,7 +136,13 @@ void FileDialogLogic() {
 }
 
 void SolvingMaze_Update() {
-	solver.Floodfill();
+	const float step_interval = 0.25f;
+	static float step_timer = step_interval;
+
+	if ((step_timer -= GetFrameTime()) <= 0.0f) {
+		step_timer += step_interval;
+		solver.Step();
+	}
 }
 
 void DrawUI() {

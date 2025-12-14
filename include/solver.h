@@ -17,8 +17,8 @@ public:
 
 	void Reset(Point starting_coord);
 	void UpdateWalls();
-
 	void Floodfill();
+	void Step();
 
 	void Draw();
 };
