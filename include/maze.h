@@ -35,6 +35,6 @@ public:
 
 	void Draw(Color wall_clr, Color dot_clr);
 
-	int SaveToFile(std::string filename);
-	int LoadFromFile(std::string filename);
+	int SaveToFile(std::string filename, Point starting_coord);
+	int LoadFromFile(std::string filename, Point* starting_coord);
 };

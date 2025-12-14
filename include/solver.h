@@ -2,6 +2,7 @@
 
 #include "maze.h"
 #include "point.h"
+#include <string>
 
 enum SolverState {
 	SEARCHING,

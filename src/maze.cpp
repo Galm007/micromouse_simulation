@@ -126,7 +126,7 @@ void Maze::Draw(Color wall_clr, Color dot_clr) {
 	}
 }
 
-int Maze::SaveToFile(std::string filename) {
+int Maze::SaveToFile(std::string filename, Point starting_coord) {
 	std::ofstream file;
 	file.open(filename);
 	if (!file.is_open()) {
@@ -154,13 +154,16 @@ int Maze::SaveToFile(std::string filename) {
 		file << line << '\n';
 	}
 
+	file << std::to_string(starting_coord.y) << '\n';
+	file << std::to_string(starting_coord.x) << '\n';
+
 	std::cout << "Saved maze layout to: " << filename << std::endl;
 
 	file.close();
 	return 1;
 }
 
-int Maze::LoadFromFile(std::string filename) {
+int Maze::LoadFromFile(std::string filename, Point* starting_coord) {
 	std::ifstream file;
 	file.open(filename);
 	if (!file.is_open()) {
@@ -177,8 +180,7 @@ int Maze::LoadFromFile(std::string filename) {
 	// Maze edges will automatically have walls
 
 	std::string line;
-	int row = 0;
-	while (std::getline(file, line)) {
+	for (int row = 0; row < MAZE_ROWS && std::getline(file, line); row++) {
 		int col = 0;
 		for (char& c : line) {
 			switch (c) {
@@ -206,7 +208,16 @@ int Maze::LoadFromFile(std::string filename) {
 			}
 			col++;
 		}
-		row++;
+	}
+
+	std::string row_line;
+	std::string col_line;
+	if (std::getline(file, row_line) && std::getline(file, col_line)) {
+		starting_coord->y = std::stoi(row_line);
+		starting_coord->x = std::stoi(col_line);
+	} else {
+		std::cout << "No starting coordinates detected in file: " << filename << std::endl;
+		return 0;
 	}
 
 	std::cout << "Loaded maze layout: " << filename << std::endl;

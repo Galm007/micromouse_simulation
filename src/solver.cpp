@@ -4,6 +4,8 @@
 #include <queue>
 #include <string>
 #include <tuple>
+#include <fstream>
+#include <iostream>
 
 Solver::Solver(Maze* maze, Point starting_coord) {
 	this->floodfill_maze.position = maze->position;
@@ -98,18 +100,15 @@ void Solver::Step() {
 		&& !floodfill_maze.HWallAt(coord)
 		&& manhattan_dist[coord.y - 1][coord.x] == next_dist) {
 		coord.y--;
-	}
-	else if (coord.y < MAZE_ROWS - 1
+	} else if (coord.y < MAZE_ROWS - 1
 		&& !floodfill_maze.HWallAt(coord + Point(0, 1))
 		&& manhattan_dist[coord.y + 1][coord.x] == next_dist) {
 		coord.y++;
-	}
-	else if (coord.x > 0
+	} else if (coord.x > 0
 		&& !floodfill_maze.VWallAt(coord)
 		&& manhattan_dist[coord.y][coord.x - 1] == next_dist) {
 		coord.x--;
-	}
-	else if (coord.x < MAZE_COLS - 1
+	} else if (coord.x < MAZE_COLS - 1
 		&& !floodfill_maze.VWallAt(coord + Point(1, 0))
 		&& manhattan_dist[coord.y][coord.x + 1] == next_dist) {
 		coord.x++;
