@@ -6,9 +6,10 @@
 class Solver {
 private:
 	Point coord = Point(0, 0);
-	Point dir = Point(0, 1);
 	Maze floodfill_maze = Maze(ray::Vector2(0.0f, 0.0f));
 	Maze* maze;
+
+	int manhattan_dist[MAZE_ROWS][MAZE_COLS] = {-1};
 
 public:
 	Solver(Maze* maze, Point starting_coord);
@@ -16,6 +17,8 @@ public:
 
 	void Reset(Point starting_coord);
 	void UpdateWalls();
+
+	void Floodfill();
 
 	void Draw();
 };

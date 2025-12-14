@@ -136,6 +136,7 @@ void FileDialogLogic() {
 }
 
 void SolvingMaze_Update() {
+	solver.Floodfill();
 }
 
 void DrawUI() {
@@ -245,7 +246,10 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		solver.Draw();
+		if (state == SOLVING_MAZE) {
+			solver.Draw();
+		}
+
 		mouse.Draw();
 
 		DrawUI();
