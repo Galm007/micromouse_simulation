@@ -163,7 +163,7 @@ void DrawUI() {
 			maze.Clear();
 		}
 	}
-	if (GuiButton(ui_layout_recs[5], "RUN SOLVER")) {
+	if (!maze_is_editable && GuiButton(ui_layout_recs[5], "RUN SOLVER")) {
 		solver.Reset(Point(0, 0));
 		maze_is_editable = false;
 		state = SOLVING_MAZE;
