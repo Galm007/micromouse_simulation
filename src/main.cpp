@@ -20,6 +20,7 @@ enum ApplicationState {
 	IDLE,
 	PLACING_WALL,
 	DELETING_WALL,
+	MOVING_STARTING_COORD,
 	SAVING_MAZE,
 	LOADING_MAZE,
 	SOLVING_MAZE,
@@ -72,20 +73,29 @@ void PostUpdate() {
 }
 
 void Idle_Update() {
-	Vector2 mouse = GetMousePosition();
+	ray::Vector2 mouse = GetMousePosition();
 
 	if (mouse.x < ui_anchor.x) {
-		if (maze_is_editable && maze.Contains(GetMousePosition())) {
-			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-				edit_wall_from = closest_corner_to_mouse;
-				state = PLACING_WALL;
-				return;
+		Point mouse_coord = Point(
+			(mouse.x - maze.position.x) / MAZE_CELL_SIZE,
+			(mouse.y - maze.position.y) / MAZE_CELL_SIZE
+		);
+
+		if (maze_is_editable) {
+			if (maze.Contains(mouse)) {
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+					edit_wall_from = closest_corner_to_mouse;
+					state = PLACING_WALL;
+					return;
+				}
+				if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+					edit_wall_from = closest_corner_to_mouse;
+					state = DELETING_WALL;
+					return;
+				}
 			}
-			if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-				edit_wall_from = closest_corner_to_mouse;
-				state = DELETING_WALL;
-				return;
-			}
+		} else if (mouse_coord == solver_starting_coord && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+			state = MOVING_STARTING_COORD;
 		}
 	}
 }
@@ -103,6 +113,17 @@ void DeletingWall_Update() {
 		maze.SetWalls(edit_wall_from, closest_corner_to_mouse, false);
 		state = IDLE;
 		return;
+	}
+}
+
+void MovingStartingCoord_Update() {
+	ray::Vector2 mouse = GetMousePosition();
+	if (mouse.x < ui_anchor.x && maze.Contains(mouse) && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+		solver_starting_coord = Point(
+			(mouse.x - maze.position.x) / MAZE_CELL_SIZE,
+			(mouse.y - maze.position.y) / MAZE_CELL_SIZE
+		);
+		state = IDLE;
 	}
 }
 
@@ -217,6 +238,9 @@ int main(int argc, char** argv) {
 		case DELETING_WALL:
 			DeletingWall_Update();
 			break;
+		case MOVING_STARTING_COORD:
+			MovingStartingCoord_Update();
+			break;
 		case SAVING_MAZE:
 		case LOADING_MAZE:
 			FileDialogLogic();
@@ -261,6 +285,16 @@ int main(int argc, char** argv) {
 					DrawLineV(edit_wall_pos, GetMousePosition(), RED);
 				}
 				DrawCircleLinesV(edit_wall_pos, 6.0f, BLACK);
+			}
+		} else if (state != SOLVING_MAZE) {
+			if (state == MOVING_STARTING_COORD) {
+				DrawCircleV(GetMousePosition(), MAZE_CELL_SIZE * 0.4f, ORANGE);
+			} else {
+				DrawCircleV(
+					maze.position + (solver_starting_coord.ToVec2() + ray::Vector2(0.5f, 0.5f)) * MAZE_CELL_SIZE,
+					MAZE_CELL_SIZE * 0.4f,
+					ORANGE	
+				);
 			}
 		}
 

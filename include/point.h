@@ -16,4 +16,5 @@ public:
 
 	Point operator + (Point p);
 	Point operator - (Point p);
+	bool operator == (Point p);
 };
