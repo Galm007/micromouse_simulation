@@ -89,6 +89,10 @@ void Solver::Floodfill() {
 }
 
 void Solver::Step() {
+	if (state == SURVEYING_GOAL_AREA) {
+		return;
+	}
+
 	int next_dist = manhattan_dist[coord.y][coord.x] - 1;
 	if (coord.y > 0
 		&& !floodfill_maze.HWallAt(coord)
@@ -115,20 +119,21 @@ void Solver::Step() {
 	Floodfill();
 }
 
-void Solver::Draw() {
+void Solver::Draw(ray::Vector2 pos) {
+	floodfill_maze.position = pos;
+	floodfill_maze.Draw(BLACK, ColorAlpha(BLACK, 0.0f));
+
 	DrawCircleV(
-		maze->position + (coord.ToVec2() + ray::Vector2(0.5f, 0.5f)) * MAZE_CELL_SIZE,
+		pos + (coord.ToVec2() + ray::Vector2(0.5f, 0.5f)) * MAZE_CELL_SIZE,
 		MAZE_CELL_SIZE * 0.4f,
 		ORANGE
 	);
 
-	floodfill_maze.Draw(BLACK, ColorAlpha(BLACK, 0.0f));
-
 	for (int i = 0; i < MAZE_ROWS; i++) {
 		for (int j = 0; j < MAZE_COLS; j++) {
-			Vector2 pos = maze->position + ray::Vector2(j, i) * MAZE_CELL_SIZE;
+			Vector2 p = pos + ray::Vector2(j, i) * MAZE_CELL_SIZE;
 			GuiLabel(
-				ray::Rectangle(pos.x + 10.0f, pos.y, 50.0f, 50.0f),
+				ray::Rectangle(p.x + 10.0f, p.y, 50.0f, 50.0f),
 				std::to_string(manhattan_dist[i][j]).c_str()
 			);
 		}

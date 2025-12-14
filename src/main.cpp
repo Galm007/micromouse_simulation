@@ -253,7 +253,7 @@ int main(int argc, char** argv) {
 		}
 
 		if (state == SOLVING_MAZE) {
-			solver.Draw();
+			solver.Draw(maze.position);
 		}
 
 		mouse.Draw();
