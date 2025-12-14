@@ -20,7 +20,6 @@ enum ApplicationState {
 	IDLE,
 	PLACING_WALL,
 	DELETING_WALL,
-	PANNING_VIEW,
 	SAVING_MAZE,
 	LOADING_MAZE,
 	SOLVING_MAZE,
@@ -29,7 +28,6 @@ enum ApplicationState {
 ApplicationState state = IDLE;
 
 std::string maze_filename;
-Maze maze = Maze(ray::Vector2(50.0f, 100.0f));
 Point closest_corner_to_mouse = Point(0);
 Point edit_wall_from = Point(0);
 bool maze_is_editable = false;
@@ -37,7 +35,9 @@ bool show_manhattan_dist = false;
 bool show_full_map = true;
 float solver_step_interval = 0.90f;
 float step_timer = 1.0f;
+bool panning_view = false;
 
+Maze maze = Maze(ray::Vector2(50.0f, 100.0f));
 Solver solver = Solver(&maze, Point(0, 0));
 Mouse mouse = Mouse(&maze, Point(0, 0));
 
@@ -76,11 +76,6 @@ void Idle_Update() {
 				return;
 			}
 		}
-
-		if (IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE)) {
-			state = PANNING_VIEW;
-			return;
-		}
 	}
 }
 
@@ -98,15 +93,6 @@ void DeletingWall_Update() {
 		state = IDLE;
 		return;
 	}
-}
-
-void PanningView_Update() {
-	if (IsMouseButtonReleased(MOUSE_BUTTON_MIDDLE)) {
-		state = IDLE;
-		return;
-	}
-	maze.position += GetMouseDelta();
-	mouse.position += GetMouseDelta();
 }
 
 void FileDialogLogic() {
@@ -220,9 +206,6 @@ int main(int argc, char** argv) {
 		case DELETING_WALL:
 			DeletingWall_Update();
 			break;
-		case PANNING_VIEW:
-			PanningView_Update();
-			break;
 		case SAVING_MAZE:
 		case LOADING_MAZE:
 			FileDialogLogic();
@@ -230,6 +213,11 @@ int main(int argc, char** argv) {
 		case SOLVING_MAZE:
 			SolvingMaze_Update();
 			break;
+		}
+
+		if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
+			maze.position += GetMouseDelta();
+			mouse.position += GetMouseDelta();
 		}
 
 		mouse.Move(40 * GetFrameTime());
