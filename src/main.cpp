@@ -33,11 +33,14 @@ Maze maze = Maze(ray::Vector2(50.0f, 100.0f));
 Point closest_corner_to_mouse = Point(0);
 Point edit_wall_from = Point(0);
 bool maze_is_editable = false;
+bool show_manhattan_dist = false;
+bool show_full_map = true;
+float solver_step_interval = 0.90f;
+float step_timer = 1.0f;
 
 Solver solver = Solver(&maze, Point(0, 0));
 Mouse mouse = Mouse(&maze, Point(0, 0));
 
-GuiWindowFileDialogState file_dialog_state;
 Vector2 ui_anchor = { SCREEN_WIDTH - 300.0f, 0.0f };
 ray::Rectangle ui_layout_recs[] = {
 	ray::Rectangle(ui_anchor.x, ui_anchor.y, 300.0f, SCREEN_HEIGHT), // Panel
@@ -45,9 +48,13 @@ ray::Rectangle ui_layout_recs[] = {
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 110.0f, 280.0f, 50.0f), // Save Maze Layout Button
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 930.0f, 280.0f, 50.0f), // Edit Maze Toggle
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 870.0f, 280.0f, 50.0f), // Clear Maze
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 170.0f, 280.0f, 50.0f), // Run Solver
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 230.0f, 280.0f, 50.0f) // Stop Solver
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 190.0f, 280.0f, 50.0f), // Run Solver
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 430.0f, 280.0f, 50.0f), // Stop Solver
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 260.0f, 30.0f, 30.0f), // Manhattan Distance
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 320.0f, 30.0f, 30.0f), // Full Map
+	ray::Rectangle(ui_anchor.x + 70.0f, ui_anchor.y + 380.0f, 160.0f, 30.0f) // Solver Speed Slider
 };
+GuiWindowFileDialogState file_dialog_state;
 
 void PreUpdate() {
 	closest_corner_to_mouse = maze.ClosestCornerTo(GetMousePosition());
@@ -136,11 +143,8 @@ void FileDialogLogic() {
 }
 
 void SolvingMaze_Update() {
-	const float step_interval = 0.25f;
-	static float step_timer = step_interval;
-
 	if ((step_timer -= GetFrameTime()) <= 0.0f) {
-		step_timer += step_interval;
+		step_timer = 1.0f - solver_step_interval;
 		solver.Step();
 	}
 }
@@ -166,10 +170,16 @@ void DrawUI() {
 	if (!maze_is_editable && GuiButton(ui_layout_recs[5], "RUN SOLVER")) {
 		solver.Reset(Point(0, 0));
 		maze_is_editable = false;
+		step_timer = 1.0f;
 		state = SOLVING_MAZE;
 	}
-	if (state == SOLVING_MAZE && GuiButton(ui_layout_recs[6], "STOP SOLVER")) {
-		state = IDLE;
+	if (state == SOLVING_MAZE) {
+		if (GuiButton(ui_layout_recs[6], "STOP SOLVER")) {
+			state = IDLE;
+		}
+		GuiCheckBox(ui_layout_recs[7], "Manhattan Distance", &show_manhattan_dist);
+		GuiCheckBox(ui_layout_recs[8], "Full Map", &show_full_map);
+		GuiSlider(ui_layout_recs[9], "SLOW", "FAST", &solver_step_interval, 0.1f, 1.0f);
 	}
 
 	GuiWindowFileDialog(&file_dialog_state);
@@ -228,7 +238,17 @@ int main(int argc, char** argv) {
 		BeginDrawing();
 		window.ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
-		maze.Draw(LIGHTGRAY, RED);
+		DrawRectangleV(
+			maze.position + ray::Vector2(7.0f, 7.0f) * MAZE_CELL_SIZE,
+			ray::Vector2(2.0f, 2.0f) * MAZE_CELL_SIZE,
+			ColorAlpha(GREEN, 0.5f)
+		);
+
+		Color wall_clr = BLACK;
+		if (state == SOLVING_MAZE) {
+			wall_clr = show_full_map ? LIGHTGRAY : ColorAlpha(BLACK, 0.0f);
+		}
+		maze.Draw(wall_clr, RED);
 
 		if (maze_is_editable) {
 			Vector2 closest_corner_pos = maze.CornerToPos(closest_corner_to_mouse);
@@ -253,7 +273,7 @@ int main(int argc, char** argv) {
 		}
 
 		if (state == SOLVING_MAZE) {
-			solver.Draw(maze.position);
+			solver.Draw(maze.position, show_manhattan_dist);
 		}
 
 		mouse.Draw();

@@ -26,5 +26,5 @@ public:
 	void Floodfill();
 	void Step();
 
-	void Draw(ray::Vector2 pos);
+	void Draw(ray::Vector2 pos, bool show_manhattan_dist);
 };

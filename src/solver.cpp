@@ -119,7 +119,7 @@ void Solver::Step() {
 	Floodfill();
 }
 
-void Solver::Draw(ray::Vector2 pos) {
+void Solver::Draw(ray::Vector2 pos, bool show_manhattan_dist) {
 	floodfill_maze.position = pos;
 	floodfill_maze.Draw(BLACK, ColorAlpha(BLACK, 0.0f));
 
@@ -129,13 +129,15 @@ void Solver::Draw(ray::Vector2 pos) {
 		ORANGE
 	);
 
-	for (int i = 0; i < MAZE_ROWS; i++) {
-		for (int j = 0; j < MAZE_COLS; j++) {
-			Vector2 p = pos + ray::Vector2(j, i) * MAZE_CELL_SIZE;
-			GuiLabel(
-				ray::Rectangle(p.x + 10.0f, p.y, 50.0f, 50.0f),
-				std::to_string(manhattan_dist[i][j]).c_str()
-			);
+	if (show_manhattan_dist) {
+		for (int i = 0; i < MAZE_ROWS; i++) {
+			for (int j = 0; j < MAZE_COLS; j++) {
+				Vector2 p = pos + ray::Vector2(j, i) * MAZE_CELL_SIZE;
+				GuiLabel(
+					ray::Rectangle(p.x + 10.0f, p.y, 50.0f, 50.0f),
+					std::to_string(manhattan_dist[i][j]).c_str()
+				);
+			}
 		}
 	}
 }
