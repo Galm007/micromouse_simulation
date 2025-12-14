@@ -37,7 +37,6 @@ bool show_full_map = true;
 float solver_step_interval = 0.90f;
 float step_timer = 1.0f;
 bool panning_view = false;
-Point solver_starting_coord = Point(0, 0);
 
 Maze maze = Maze(ray::Vector2(50.0f, 100.0f));
 Solver solver = Solver(&maze, Point(0, 0));
@@ -94,7 +93,7 @@ void Idle_Update() {
 					return;
 				}
 			}
-		} else if (mouse_coord == solver_starting_coord && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+		} else if (mouse_coord == solver.starting_coord && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 			state = MOVING_STARTING_COORD;
 		}
 	}
@@ -119,7 +118,7 @@ void DeletingWall_Update() {
 void MovingStartingCoord_Update() {
 	ray::Vector2 mouse = GetMousePosition();
 	if (mouse.x < ui_anchor.x && maze.Contains(mouse) && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-		solver_starting_coord = Point(
+		solver.starting_coord = Point(
 			(mouse.x - maze.position.x) / MAZE_CELL_SIZE,
 			(mouse.y - maze.position.y) / MAZE_CELL_SIZE
 		);
@@ -135,11 +134,11 @@ void FileDialogLogic() {
 				.append(file_dialog_state.fileNameText);
 
 			if (state == SAVING_MAZE) {
-				maze.SaveToFile(filename, solver_starting_coord);
+				maze.SaveToFile(filename, solver.starting_coord);
 				maze_filename = filename;
 			} else if (state == LOADING_MAZE) {
 				if (ray::FileExists(filename)) {
-					maze.LoadFromFile(filename, &solver_starting_coord);
+					maze.LoadFromFile(filename, &solver.starting_coord);
 					maze_filename = filename;
 				} else {
 					std::cout << "Unable to open file: " << filename << std::endl;
@@ -163,7 +162,10 @@ void FileDialogLogic() {
 void SolvingMaze_Update() {
 	if ((step_timer -= GetFrameTime()) <= 0.0f) {
 		step_timer = 1.0f - solver_step_interval;
-		solver.Step();
+
+		if (solver.Step() && solver.target_coords[0] != solver.starting_coord) {
+			solver.target_coords = { solver.starting_coord };
+		}
 	}
 }
 
@@ -186,7 +188,7 @@ void DrawUI() {
 		}
 	}
 	if (!maze_is_editable && GuiButton(ui_layout_recs[5], "RUN SOLVER")) {
-		solver.Reset(solver_starting_coord);
+		solver.Reset();
 		maze_is_editable = false;
 		step_timer = 0.5f;
 		state = SOLVING_MAZE;
@@ -211,10 +213,10 @@ int main(int argc, char** argv) {
 	if (argc == 1) {
 		std::cout << "Restoring previous session..." << std::endl;
 		maze_filename = "backup.maz";
-		maze.LoadFromFile(maze_filename, &solver_starting_coord);
+		maze.LoadFromFile(maze_filename, &solver.starting_coord);
 	} else if (argc == 2) {
 		maze_filename = argv[1];
-		maze.LoadFromFile(maze_filename, &solver_starting_coord);
+		maze.LoadFromFile(maze_filename, &solver.starting_coord);
 	} else {
 		std::cout << "Too many input arguments!" << std::endl;
 		return 1;
@@ -291,7 +293,7 @@ int main(int argc, char** argv) {
 				DrawCircleV(GetMousePosition(), MAZE_CELL_SIZE * 0.4f, ORANGE);
 			} else {
 				DrawCircleV(
-					maze.position + (solver_starting_coord.ToVec2() + ray::Vector2(0.5f, 0.5f)) * MAZE_CELL_SIZE,
+					maze.position + (solver.starting_coord.ToVec2() + ray::Vector2(0.5f, 0.5f)) * MAZE_CELL_SIZE,
 					MAZE_CELL_SIZE * 0.4f,
 					ORANGE	
 				);
@@ -309,7 +311,7 @@ int main(int argc, char** argv) {
 		EndDrawing();
 	}
 
-	maze.SaveToFile("backup.maz", solver_starting_coord);
+	maze.SaveToFile("backup.maz", solver.starting_coord);
 
 	return 0;
 }

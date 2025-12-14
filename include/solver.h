@@ -19,13 +19,17 @@ private:
 	int manhattan_dist[MAZE_ROWS][MAZE_COLS] = {-1};
 
 public:
+	std::vector<Point> target_coords;
+	Point starting_coord = Point(0, 0);
+
 	Solver(Maze* maze, Point starting_coord);
 	~Solver();
 
-	void Reset(Point starting_coord);
+	void Reset();
 	void UpdateWalls();
 	void Floodfill();
-	void Step();
+	bool TargetReached();
+	int Step();
 
 	void Draw(ray::Vector2 pos, bool show_manhattan_dist);
 };

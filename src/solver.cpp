@@ -1,24 +1,26 @@
 #include "solver.h"
+#include <algorithm>
+#include <iostream>
 #include <raylib.h>
 #include <raygui.h>
 #include <queue>
 #include <string>
 #include <tuple>
-#include <fstream>
-#include <iostream>
 
 Solver::Solver(Maze* maze, Point starting_coord) {
 	this->floodfill_maze.position = maze->position;
 	this->maze = maze;
-	Reset(starting_coord);
+	this->starting_coord = starting_coord;
+	Reset();
 }
 
 Solver::~Solver() {
 
 }
 
-void Solver::Reset(Point starting_coord) {
+void Solver::Reset() {
 	coord = starting_coord;
+	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
 	floodfill_maze.Clear();
 
 	UpdateWalls();
@@ -47,16 +49,11 @@ void Solver::Floodfill() {
 		}
 	}
 
-	manhattan_dist[7][7] = 0;
-	manhattan_dist[7][8] = 0;
-	manhattan_dist[8][7] = 0;
-	manhattan_dist[8][8] = 0;
-
 	std::queue<std::tuple<Point, int>> q;
-	q.push(std::make_tuple(Point(7, 7), 0));
-	q.push(std::make_tuple(Point(7, 8), 0));
-	q.push(std::make_tuple(Point(8, 7), 0));
-	q.push(std::make_tuple(Point(8, 8), 0));
+	for (Point p : target_coords) {
+		q.push(std::make_tuple(p, 0));
+		manhattan_dist[p.y][p.x] = 0;
+	}
 
 	while (!q.empty()) {
 		Point ff_coord = std::get<0>(q.front());
@@ -90,11 +87,11 @@ void Solver::Floodfill() {
 	}
 }
 
-void Solver::Step() {
-	if (state == SURVEYING_GOAL_AREA) {
-		return;
-	}
+bool Solver::TargetReached() {
+	return std::find(target_coords.begin(), target_coords.end(), coord) != target_coords.end();
+}
 
+int Solver::Step() {
 	int next_dist = manhattan_dist[coord.y][coord.x] - 1;
 	if (coord.y > 0
 		&& !floodfill_maze.HWallAt(coord)
@@ -116,6 +113,8 @@ void Solver::Step() {
 
 	UpdateWalls();
 	Floodfill();
+
+	return TargetReached();
 }
 
 void Solver::Draw(ray::Vector2 pos, bool show_manhattan_dist) {
