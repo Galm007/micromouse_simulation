@@ -8,6 +8,7 @@
 
 #include "point.h"
 #include "maze.h"
+#include "solver.h"
 #include "mouse.h"
 
 namespace ray = raylib;
@@ -21,7 +22,8 @@ enum ApplicationState {
 	DELETING_WALL,
 	PANNING_VIEW,
 	SAVING_MAZE,
-	LOADING_MAZE
+	LOADING_MAZE,
+	SOLVING_MAZE,
 };
 
 ApplicationState state = IDLE;
@@ -32,6 +34,7 @@ Point closest_corner_to_mouse = Point(0);
 Point edit_wall_from = Point(0);
 bool maze_is_editable = false;
 
+Solver solver = Solver(&maze, Point(0, 0));
 Mouse mouse = Mouse(&maze, Point(0, 0));
 
 GuiWindowFileDialogState file_dialog_state;
@@ -42,6 +45,8 @@ ray::Rectangle ui_layout_recs[] = {
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 110.0f, 280.0f, 50.0f), // Save Maze Layout Button
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 930.0f, 280.0f, 50.0f), // Edit Maze Toggle
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 870.0f, 280.0f, 50.0f), // Clear Maze
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 170.0f, 280.0f, 50.0f), // Run Solver
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 230.0f, 280.0f, 50.0f) // Stop Solver
 };
 
 void PreUpdate() {
@@ -130,6 +135,9 @@ void FileDialogLogic() {
 	}
 }
 
+void SolvingMaze_Update() {
+}
+
 void DrawUI() {
 	GuiLabel(ray::Rectangle(20.0f, 10.0f, SCREEN_WIDTH, 50.0f), std::string("File: ").append(maze_filename).c_str());
 
@@ -142,9 +150,19 @@ void DrawUI() {
 		file_dialog_state.windowActive = true;
 		state = SAVING_MAZE;
 	}
-	GuiToggle(ui_layout_recs[3], "EDIT MAZE", &maze_is_editable);
-	if (GuiButton(ui_layout_recs[4], "CLEAR WALLS")) {
-		maze.Clear();
+	if (state != SOLVING_MAZE) {
+		GuiToggle(ui_layout_recs[3], "EDIT MAZE", &maze_is_editable);
+		if (maze_is_editable && GuiButton(ui_layout_recs[4], "CLEAR WALLS")) {
+			maze.Clear();
+		}
+	}
+	if (GuiButton(ui_layout_recs[5], "RUN SOLVER")) {
+		solver.Reset(Point(0, 0));
+		maze_is_editable = false;
+		state = SOLVING_MAZE;
+	}
+	if (state == SOLVING_MAZE && GuiButton(ui_layout_recs[6], "STOP SOLVER")) {
+		state = IDLE;
 	}
 
 	GuiWindowFileDialog(&file_dialog_state);
@@ -192,6 +210,9 @@ int main(int argc, char** argv) {
 		case LOADING_MAZE:
 			FileDialogLogic();
 			break;
+		case SOLVING_MAZE:
+			SolvingMaze_Update();
+			break;
 		}
 
 		mouse.Move(40 * GetFrameTime());
@@ -200,7 +221,7 @@ int main(int argc, char** argv) {
 		BeginDrawing();
 		window.ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
-		maze.Draw(BLACK, RED);
+		maze.Draw(LIGHTGRAY, RED);
 
 		if (maze_is_editable) {
 			Vector2 closest_corner_pos = maze.CornerToPos(closest_corner_to_mouse);
@@ -224,6 +245,7 @@ int main(int argc, char** argv) {
 			}
 		}
 
+		solver.Draw();
 		mouse.Draw();
 
 		DrawUI();

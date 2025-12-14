@@ -13,4 +13,7 @@ public:
 	~Point();
 
 	ray::Vector2 ToVec2();
+
+	Point operator + (Point p);
+	Point operator - (Point p);
 };

@@ -66,6 +66,14 @@ void Maze::SetWalls(Point from_corner, Point to_corner, bool state) {
 	}
 }
 
+bool Maze::HWallAt(Point corner) {
+	return horizontal_walls[corner.y][corner.x];
+}
+
+bool Maze::VWallAt(Point corner) {
+	return vertical_walls[corner.y][corner.x];
+}
+
 void Maze::Clear() {
 	for (int row = 0; row < MAZE_ROWS; row++) {
 		for (int col = 0; col < MAZE_COLS; col++) {

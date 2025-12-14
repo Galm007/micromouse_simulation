@@ -16,3 +16,11 @@ Point::~Point() {
 ray::Vector2 Point::ToVec2() {
 	return ray::Vector2(x, y);
 }
+
+Point Point::operator + (Point p) {
+	return Point(x + p.x, y + p.y);
+}
+
+Point Point::operator - (Point p) {
+	return Point(x - p.x, y - p.y);
+}
