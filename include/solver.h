@@ -2,7 +2,6 @@
 
 #include "maze.h"
 #include "point.h"
-#include <string>
 
 enum SolverState {
 	SEARCHING,
@@ -17,6 +16,7 @@ private:
 	Maze* maze;
 
 	int manhattan_dist[MAZE_ROWS][MAZE_COLS] = {-1};
+	bool visited_coords[MAZE_ROWS][MAZE_COLS] = {false};
 
 public:
 	std::vector<Point> target_coords;
