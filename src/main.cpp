@@ -26,8 +26,8 @@ enum ApplicationState {
 	SOLVING_MAZE,
 };
 
+// Miscellaneous variables
 ApplicationState state = IDLE;
-
 std::string maze_filename;
 Point closest_corner_to_mouse = Point(0);
 Point edit_wall_from = Point(0);
@@ -38,10 +38,12 @@ float solver_step_interval = 0.90f;
 float step_timer = 1.0f;
 bool panning_view = false;
 
+// Core entities
 Maze maze = Maze(ray::Vector2(50.0f, 100.0f));
 Solver solver = Solver(&maze, Point(0, 0));
 Mouse mouse = Mouse(&maze, Point(0, 0));
 
+// UI layout
 Vector2 ui_anchor = { SCREEN_WIDTH - 300.0f, 0.0f };
 ray::Rectangle ui_layout_recs[] = {
 	ray::Rectangle(ui_anchor.x, ui_anchor.y, 300.0f, SCREEN_HEIGHT), // Panel
@@ -62,6 +64,7 @@ void PreUpdate() {
 }
 
 void PostUpdate() {
+	// Pan the view
 	if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
 		maze.position += GetMouseDelta();
 		mouse.position += GetMouseDelta();
@@ -72,16 +75,17 @@ void PostUpdate() {
 }
 
 void Idle_Update() {
-	ray::Vector2 mouse = GetMousePosition();
+	ray::Vector2 m = GetMousePosition();
 
-	if (mouse.x < ui_anchor.x) {
+	if (m.x < ui_anchor.x) {
 		Point mouse_coord = Point(
-			(mouse.x - maze.position.x) / MAZE_CELL_SIZE,
-			(mouse.y - maze.position.y) / MAZE_CELL_SIZE
+			(m.x - maze.position.x) / MAZE_CELL_SIZE,
+			(m.y - maze.position.y) / MAZE_CELL_SIZE
 		);
 
 		if (maze_is_editable) {
-			if (maze.Contains(mouse)) {
+			// Controls for adding/deleting Walls
+			if (maze.Contains(m)) {
 				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 					edit_wall_from = closest_corner_to_mouse;
 					state = PLACING_WALL;
@@ -94,6 +98,7 @@ void Idle_Update() {
 				}
 			}
 		} else if (mouse_coord == solver.starting_coord && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+			// Control for dragging the starting coord somewhere else
 			state = MOVING_STARTING_COORD;
 		}
 	}
@@ -116,17 +121,18 @@ void DeletingWall_Update() {
 }
 
 void MovingStartingCoord_Update() {
-	ray::Vector2 mouse = GetMousePosition();
-	if (mouse.x < ui_anchor.x && maze.Contains(mouse) && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+	ray::Vector2 m = GetMousePosition();
+	if (m.x < ui_anchor.x && maze.Contains(m) && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
 		solver.starting_coord = Point(
-			(mouse.x - maze.position.x) / MAZE_CELL_SIZE,
-			(mouse.y - maze.position.y) / MAZE_CELL_SIZE
+			(m.x - maze.position.x) / MAZE_CELL_SIZE,
+			(m.y - maze.position.y) / MAZE_CELL_SIZE
 		);
 		state = IDLE;
 	}
 }
 
 void FileDialogLogic() {
+	// When a file is selected from the built-in file browser
 	if (file_dialog_state.SelectFilePressed) {
 		if (IsFileExtension(file_dialog_state.fileNameText, ".maz")) {
 			std::string filename = std::string(file_dialog_state.dirPathText)
@@ -134,9 +140,11 @@ void FileDialogLogic() {
 				.append(file_dialog_state.fileNameText);
 
 			if (state == SAVING_MAZE) {
+				// Save maze layout and starting position to file
 				maze.SaveToFile(filename, solver.starting_coord);
 				maze_filename = filename;
 			} else if (state == LOADING_MAZE) {
+				// Load maze layout and starting position from file
 				if (ray::FileExists(filename)) {
 					maze.LoadFromFile(filename, &solver.starting_coord);
 					maze_filename = filename;
@@ -163,15 +171,22 @@ void SolvingMaze_Update() {
 	if ((step_timer -= GetFrameTime()) <= 0.0f) {
 		step_timer = 1.0f - solver_step_interval;
 
-		if (solver.Step() && solver.target_coords[0] != solver.starting_coord) {
+		// Calculate the next step and move
+		if (solver.Step()) {
+			// When the goal is reached, set the destination back to the starting coord
 			solver.target_coords = { solver.starting_coord };
 		}
 	}
 }
 
 void DrawUI() {
-	GuiLabel(ray::Rectangle(20.0f, 10.0f, SCREEN_WIDTH, 50.0f), std::string("File: ").append(maze_filename).c_str());
+	// Display the name of the maze file currently loaded
+	GuiLabel(
+		ray::Rectangle(20.0f, 10.0f, SCREEN_WIDTH, 50.0f),
+		std::string("File: ").append(maze_filename).c_str()
+	);
 
+	// UI controls on the right side
 	GuiPanel(ui_layout_recs[0], "Micromouse Simulator");
 	if (GuiButton(ui_layout_recs[1], "LOAD MAZE LAYOUT")) {
 		file_dialog_state.windowActive = true;
@@ -202,6 +217,7 @@ void DrawUI() {
 		GuiSlider(ui_layout_recs[9], "SLOW", "FAST", &solver_step_interval, 0.1f, 1.0f);
 	}
 
+	// Display file dialogue for saving/loading files
 	GuiWindowFileDialog(&file_dialog_state);
 }
 
@@ -210,6 +226,7 @@ int main(int argc, char** argv) {
 	window.SetTargetFPS(60);
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 20);
 
+	// Maze file name can be put in as a command line argument
 	if (argc == 1) {
 		std::cout << "Restoring previous session..." << std::endl;
 		maze_filename = "backup.maz";
@@ -222,13 +239,13 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
+	// Initialize file dialogue state
 	file_dialog_state = InitGuiWindowFileDialog(GetWorkingDirectory());
 	file_dialog_state.windowBounds = ray::Rectangle(100.0f, 250.0f, 1000.0f, 500.0f);
 	file_dialog_state.saveFileMode = true;
 
 	while (!window.ShouldClose()) {
-		float ft = GetFrameTime();
-
+		// Update logic
 		PreUpdate();
 		switch (state) {
 		case IDLE:
@@ -253,15 +270,19 @@ int main(int argc, char** argv) {
 		}
 		PostUpdate();
 
+		// ------ DRAWING ------ //
+
 		BeginDrawing();
 		window.ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
+		// Color the target area green
 		DrawRectangleV(
 			maze.position + ray::Vector2(7.0f, 7.0f) * MAZE_CELL_SIZE,
 			ray::Vector2(2.0f, 2.0f) * MAZE_CELL_SIZE,
 			ColorAlpha(GREEN, 0.5f)
 		);
 
+		// Draw the maze
 		Color wall_clr = BLACK;
 		if (state == SOLVING_MAZE) {
 			wall_clr = show_full_map ? LIGHTGRAY : ColorAlpha(BLACK, 0.0f);
@@ -272,10 +293,13 @@ int main(int argc, char** argv) {
 			Vector2 closest_corner_pos = maze.CornerToPos(closest_corner_to_mouse);
 			Vector2 edit_wall_pos = maze.CornerToPos(edit_wall_from);
 
+			// Show which corner is affected by the mouse while editing
 			if (maze.Contains(GetMousePosition())) {
 				DrawCircleLinesV(closest_corner_pos, 6.0f, BLACK);
 			}
 
+			// Draw the walls that are about to be edited by the user in green.
+			// If the action is invalid, draw the line in red.
 			if (state == PLACING_WALL || state == DELETING_WALL) {
 				if (maze.Contains(GetMousePosition())) {
 					DrawLineV(
@@ -289,6 +313,7 @@ int main(int argc, char** argv) {
 				DrawCircleLinesV(edit_wall_pos, 6.0f, BLACK);
 			}
 		} else if (state != SOLVING_MAZE) {
+			// Draw the solver's starting coord
 			if (state == MOVING_STARTING_COORD) {
 				DrawCircleV(GetMousePosition(), MAZE_CELL_SIZE * 0.4f, ORANGE);
 			} else {
@@ -300,14 +325,13 @@ int main(int argc, char** argv) {
 			}
 		}
 
+		// Draw the solver on top of the maze
 		if (state == SOLVING_MAZE) {
 			solver.Draw(maze.position, show_manhattan_dist);
 		}
 
 		mouse.Draw();
-
 		DrawUI();
-
 		EndDrawing();
 	}
 

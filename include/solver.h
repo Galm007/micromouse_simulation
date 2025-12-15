@@ -3,14 +3,8 @@
 #include "maze.h"
 #include "point.h"
 
-enum SolverState {
-	SEARCHING,
-	SURVEYING_GOAL_AREA
-};
-
 class Solver {
 private:
-	SolverState state = SEARCHING;
 	Point coord = Point(0, 0);
 	Maze floodfill_maze = Maze(ray::Vector2(0.0f, 0.0f));
 	Maze* maze;

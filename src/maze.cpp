@@ -43,11 +43,13 @@ Vector2 Maze::CornerToPos(Point coord) {
 	);
 }
 
+// Given wall should only either be horizontal or vertical, and not fully lie on the edge
 bool Maze::IsWallValid(Point from_corner, Point to_corner) {
 	return (from_corner.y == to_corner.y && from_corner.x != to_corner.x && to_corner.y != 0 && to_corner.y != MAZE_ROWS)
 		|| (from_corner.y != to_corner.y && from_corner.x == to_corner.x && to_corner.x != 0 && to_corner.x != MAZE_COLS);
 }
 
+// Set the state of multiple walls
 void Maze::SetWalls(Point from_corner, Point to_corner, bool state) {
 	if (from_corner.y == to_corner.y) {
 		int left = std::min(from_corner.x, to_corner.x);
@@ -74,6 +76,7 @@ bool Maze::VWallAt(Point corner) {
 	return vertical_walls[corner.y][corner.x];
 }
 
+// Set all walls other than edge walls to false 
 void Maze::Clear() {
 	for (int row = 0; row < MAZE_ROWS; row++) {
 		for (int col = 0; col < MAZE_COLS; col++) {
@@ -100,14 +103,15 @@ void Maze::Draw(Color wall_clr, Color dot_clr) {
 			int x = col * MAZE_CELL_SIZE + position.x;
 			int y = row * MAZE_CELL_SIZE + position.y;
 
+			// Draw walls
 			if (left_wall) {
 				DrawLine(x, y, x, y + MAZE_CELL_SIZE, wall_clr);
 			}
-
 			if (top_wall) {
 				DrawLine(x, y, x + MAZE_CELL_SIZE, y, wall_clr);
 			}
 
+			// Draw corner
 			DrawCircle(x, y, 3.0f, dot_clr);
 		}
 	}
@@ -115,9 +119,11 @@ void Maze::Draw(Color wall_clr, Color dot_clr) {
 	int right = position.x + MAZE_COLS * MAZE_CELL_SIZE;
 	int bottom = position.y + MAZE_ROWS * MAZE_CELL_SIZE;
 
+	// Draw the bottom and right edges of the maze
 	DrawLine(right, position.y, right, bottom, wall_clr);
 	DrawLine(position.x, bottom, right, bottom, wall_clr);
 
+	// Draw the bottom and right corners of the maze
 	for (int row = 0; row <= MAZE_ROWS; row++) {
 		DrawCircle(right, row * MAZE_CELL_SIZE + position.y, 3.0f, dot_clr);
 	}
@@ -125,6 +131,16 @@ void Maze::Draw(Color wall_clr, Color dot_clr) {
 		DrawCircle(col * MAZE_CELL_SIZE + position.x, bottom, 3.0f, dot_clr);
 	}
 }
+
+// .maz files:
+// - First 16 lines represent maze rows
+// - Each line's characters represent maze columns
+// - Each character is either 0, 1, 2, or 3:
+// - 0 means no top or left wall
+// - 1 means only left wall exists
+// - 2 means only top wall exists
+// - 3 means both left and top walls exist
+// - Lines 17 and 18 contain the solver's starting row and column, respectively
 
 int Maze::SaveToFile(std::string filename, Point starting_coord) {
 	std::ofstream file;
