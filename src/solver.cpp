@@ -251,7 +251,7 @@ void Solver::Draw(ray::Vector2 pos, bool show_manhattan_dist) {
 					continue;
 				}
 
-				Vector2 p = maze->CornerToPos(Point(i, j));
+				Vector2 p = maze->CornerToPos(Point(j, i));
 				GuiLabel(
 					ray::Rectangle(p.x + 10.0f, p.y, 50.0f, 50.0f),
 					std::to_string(mdist).c_str()
