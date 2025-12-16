@@ -43,7 +43,7 @@ bool showing_paths = false;
 std::vector<std::vector<Point>> paths;
 
 // Core entities
-Maze maze = Maze(ray::Vector2(80.0f, 100.0f));
+Maze maze = Maze(ray::Vector2(100.0f, 100.0f));
 Solver solver = Solver(&maze, Point(0, 0));
 Mouse mouse = Mouse(&maze, Point(0, 0));
 
@@ -361,7 +361,12 @@ int main(int argc, char** argv) {
 				for (int p = 0; p < paths.size(); p++) {
 					Point from = paths[p][0];
 					for (int i = 1; i < paths[p].size(); i++) {
-						DrawLineV(maze.CellToPos(from), maze.CellToPos(paths[p][i]), RED);
+						DrawLineEx(
+							maze.CellToPos(from),
+							maze.CellToPos(paths[p][i]),
+							2.0f,
+							PURPLE
+						);
 						from = paths[p][i];
 					}
 				}
