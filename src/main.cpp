@@ -1,3 +1,4 @@
+#include "Functions.hpp"
 #include <iostream>
 #include <raylib.h>
 #include <raylib-cpp.hpp>
@@ -10,6 +11,7 @@
 #include "maze.h"
 #include "solver.h"
 #include "mouse.h"
+#include "console.h"
 
 namespace ray = raylib;
 
@@ -46,7 +48,8 @@ Solver solver = Solver(&maze, Point(0, 0));
 Mouse mouse = Mouse(&maze, Point(0, 0));
 
 // UI layout
-Vector2 ui_anchor = { SCREEN_WIDTH - 300.0f, 0.0f };
+ray::Vector2 ui_anchor = ray::Vector2(SCREEN_WIDTH - 300.0f, 0.0f);
+ray::Vector2 console_anchor = ray::Vector2(0.0f, SCREEN_HEIGHT - 150.0f);
 ray::Rectangle ui_layout_recs[] = {
 	ray::Rectangle(ui_anchor.x, ui_anchor.y, 300.0f, SCREEN_HEIGHT), // Panel
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 50.0f, 280.0f, 50.0f), // Load Maze Layout Button
@@ -58,7 +61,9 @@ ray::Rectangle ui_layout_recs[] = {
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 260.0f, 30.0f, 30.0f), // Manhattan Distance
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 320.0f, 30.0f, 30.0f), // Full Map
 	ray::Rectangle(ui_anchor.x + 70.0f, ui_anchor.y + 380.0f, 160.0f, 30.0f), // Solver Speed Slider
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 430.0f, 280.0f, 50.0f) // Skip Animation
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 430.0f, 280.0f, 50.0f), // Skip Animation
+	ray::Rectangle(console_anchor.x, console_anchor.y, 900.0f, 150.0f), // Console
+	ray::Rectangle(console_anchor.x + 820.0f, console_anchor.y + 2.0f, 70.0f, 20.0f) // Clear Console
 };
 GuiWindowFileDialogState file_dialog_state;
 
@@ -154,11 +159,11 @@ void FileDialogLogic() {
 					maze_filename = filename;
 					SetWindowTitle(file_dialog_state.fileNameText);
 				} else {
-					std::cout << "Unable to open file: " << filename << std::endl;
+					ConsoleLog("Unable to open file: " + filename);
 				}
 			}
 		} else {
-			std::cout << "Invalid filetype!" << std::endl;
+			ConsoleLog("Invalid filetype!");
 		}
 
 		file_dialog_state.SelectFilePressed = false;
@@ -234,6 +239,10 @@ void DrawUI() {
 			}
 		}
 	}
+	ConsoleDraw(ui_layout_recs[11]);
+	if (GuiButton(ui_layout_recs[12], "clear")) {
+		ConsoleClear();
+	}
 
 	// Display file dialogue for saving/loading files
 	GuiWindowFileDialog(&file_dialog_state);
@@ -246,7 +255,7 @@ int main(int argc, char** argv) {
 
 	// Maze file name can be put in as a command line argument
 	if (argc == 1) {
-		std::cout << "Restoring previous session..." << std::endl;
+		ConsoleLog("Restoring previous session...");
 		maze_filename = "backup.maz";
 		maze.LoadFromFile(maze_filename, &solver.starting_coord);
 		SetWindowTitle(maze_filename.c_str());
@@ -365,6 +374,5 @@ int main(int argc, char** argv) {
 	}
 
 	maze.SaveToFile("backup.maz", solver.starting_coord);
-
 	return 0;
 }

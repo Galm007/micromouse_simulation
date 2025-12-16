@@ -1,8 +1,8 @@
 #include "maze.h"
+#include "console.h"
 
 #include <algorithm>
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <raylib.h>
 #include <raylib-cpp.hpp>
@@ -145,7 +145,7 @@ int Maze::SaveToFile(std::string filename, Point starting_coord) {
 	std::ofstream file;
 	file.open(filename);
 	if (!file.is_open()) {
-		std::cout << "Unable to open file: " << filename << std::endl;
+		ConsoleLog("Unable to open file: " + filename);
 		return 0;
 	}
 
@@ -174,7 +174,7 @@ int Maze::SaveToFile(std::string filename, Point starting_coord) {
 	file << std::to_string(starting_coord.y) << '\n';
 	file << std::to_string(starting_coord.x) << '\n';
 
-	std::cout << "Saved maze layout to: " << filename << std::endl;
+	ConsoleLog("Saved maze layout to: " + filename);
 
 	file.close();
 	return 1;
@@ -184,7 +184,7 @@ int Maze::LoadFromFile(std::string filename, Point* starting_coord) {
 	std::ifstream file;
 	file.open(filename);
 	if (!file.is_open()) {
-		std::cout << "Unable to open file: " << filename << std::endl;
+		ConsoleLog("Unable to open file: " + filename);
 		return 0;
 	}
 
@@ -213,7 +213,7 @@ int Maze::LoadFromFile(std::string filename, Point* starting_coord) {
 			case '\n':
 				break;
 			default:
-				std::cout << "Invalid cell state: " << c << std::endl;
+				ConsoleLog(std::string("Invalid cell state: ") + c);
 				return 0;
 			}
 			col++;
@@ -226,11 +226,11 @@ int Maze::LoadFromFile(std::string filename, Point* starting_coord) {
 		starting_coord->y = std::stoi(row_line);
 		starting_coord->x = std::stoi(col_line);
 	} else {
-		std::cout << "No starting coordinates detected in file: " << filename << std::endl;
+		ConsoleLog("No starting coordinates detected in file: " + filename);
 		return 0;
 	}
 
-	std::cout << "Loaded maze layout: " << filename << std::endl;
+	ConsoleLog("Loaded maze layout: " + filename);
 
 	file.close();
 	return 1;
