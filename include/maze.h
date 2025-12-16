@@ -25,7 +25,8 @@ public:
 
 	bool Contains(Vector2 pos);
 	Point ClosestCornerTo(Vector2 pos);
-	Vector2 CornerToPos(Point coord);
+	ray::Vector2 CornerToPos(Point coord);
+	ray::Vector2 CellToPos(Point coord);
 
 	static bool IsWallValid(Point from_corner, Point to_corner);
 	void SetWalls(Point from_corner, Point to_corner, bool state);

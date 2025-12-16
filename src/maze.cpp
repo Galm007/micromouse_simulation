@@ -36,11 +36,15 @@ Point Maze::ClosestCornerTo(Vector2 pos) {
 	);
 }
 
-Vector2 Maze::CornerToPos(Point coord) {
+ray::Vector2 Maze::CornerToPos(Point coord) {
 	return ray::Vector2(
 		position.x + coord.x * MAZE_CELL_SIZE,
 		position.y + coord.y * MAZE_CELL_SIZE
 	);
+}
+
+ray::Vector2 Maze::CellToPos(Point coord) {
+	return CornerToPos(coord) + ray::Vector2(0.5f, 0.5f) * MAZE_CELL_SIZE;
 }
 
 // Given wall should only either be horizontal or vertical, and not fully lie on the edge

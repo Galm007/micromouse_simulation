@@ -21,9 +21,11 @@ public:
 
 	void Reset();
 	void UpdateWalls();
-	void Floodfill();
-	bool TargetReached();
+	void Floodfill(bool visited_coords_only);
+	bool IsInTarget(Point coordinate);
 	int Step();
+
+	std::vector<std::vector<Point>> FindSolutions();
 
 	void Draw(ray::Vector2 pos, bool show_manhattan_dist);
 };

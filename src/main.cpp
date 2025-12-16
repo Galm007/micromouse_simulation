@@ -23,7 +23,7 @@ enum ApplicationState {
 	MOVING_STARTING_COORD,
 	SAVING_MAZE,
 	LOADING_MAZE,
-	SOLVING_MAZE,
+	SOLVING_MAZE
 };
 
 // Miscellaneous variables
@@ -37,6 +37,8 @@ bool show_full_map = true;
 float solver_step_interval = 0.90f;
 float step_timer = 1.0f;
 bool panning_view = false;
+bool showing_paths = false;
+std::vector<std::vector<Point>> paths;
 
 // Core entities
 Maze maze = Maze(ray::Vector2(50.0f, 100.0f));
@@ -52,10 +54,11 @@ ray::Rectangle ui_layout_recs[] = {
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 930.0f, 280.0f, 50.0f), // Edit Maze Toggle
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 870.0f, 280.0f, 50.0f), // Clear Maze
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 190.0f, 280.0f, 50.0f), // Run Solver
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 430.0f, 280.0f, 50.0f), // Stop Solver
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 490.0f, 280.0f, 50.0f), // Stop Solver
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 260.0f, 30.0f, 30.0f), // Manhattan Distance
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 320.0f, 30.0f, 30.0f), // Full Map
-	ray::Rectangle(ui_anchor.x + 70.0f, ui_anchor.y + 380.0f, 160.0f, 30.0f) // Solver Speed Slider
+	ray::Rectangle(ui_anchor.x + 70.0f, ui_anchor.y + 380.0f, 160.0f, 30.0f), // Solver Speed Slider
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 430.0f, 280.0f, 50.0f) // Skip Animation
 };
 GuiWindowFileDialogState file_dialog_state;
 
@@ -168,13 +171,19 @@ void FileDialogLogic() {
 }
 
 void SolvingMaze_Update() {
-	if ((step_timer -= GetFrameTime()) <= 0.0f) {
+	if ((step_timer -= GetFrameTime()) <= 0.0f && !showing_paths) {
 		step_timer = 1.0f - solver_step_interval;
 
 		// Calculate the next step and move
 		if (solver.Step()) {
-			// When the goal is reached, set the destination back to the starting coord
-			solver.target_coords = { solver.starting_coord };
+			if (solver.target_coords[0] != solver.starting_coord) {
+				// When the goal is reached, set the destination back to the starting coord
+				solver.target_coords = { solver.starting_coord };
+				step_timer = 1.0f;
+			} else {
+				paths = solver.FindSolutions();
+				showing_paths = true;
+			}
 		}
 	}
 }
@@ -206,6 +215,7 @@ void DrawUI() {
 		solver.Reset();
 		maze_is_editable = false;
 		step_timer = 0.5f;
+		showing_paths = false;
 		state = SOLVING_MAZE;
 	}
 	if (state == SOLVING_MAZE) {
@@ -215,6 +225,12 @@ void DrawUI() {
 		GuiCheckBox(ui_layout_recs[7], "Manhattan Distance", &show_manhattan_dist);
 		GuiCheckBox(ui_layout_recs[8], "Full Map", &show_full_map);
 		GuiSlider(ui_layout_recs[9], "SLOW", "FAST", &solver_step_interval, 0.1f, 1.0f);
+		if (GuiButton(ui_layout_recs[10], "SKIP ANIMATION")) {
+			while (!showing_paths) {
+				step_timer = 0.0f;
+				SolvingMaze_Update();
+			}
+		}
 	}
 
 	// Display file dialogue for saving/loading files
@@ -314,20 +330,28 @@ int main(int argc, char** argv) {
 			}
 		} else if (state != SOLVING_MAZE) {
 			// Draw the solver's starting coord
-			if (state == MOVING_STARTING_COORD) {
-				DrawCircleV(GetMousePosition(), MAZE_CELL_SIZE * 0.4f, ORANGE);
-			} else {
-				DrawCircleV(
-					maze.position + (solver.starting_coord.ToVec2() + ray::Vector2(0.5f, 0.5f)) * MAZE_CELL_SIZE,
-					MAZE_CELL_SIZE * 0.4f,
-					ORANGE	
-				);
-			}
+			DrawCircleV(
+				state == MOVING_STARTING_COORD
+					? GetMousePosition()
+					: maze.CellToPos(solver.starting_coord),
+				MAZE_CELL_SIZE * 0.4f,
+				ORANGE
+			);
 		}
 
 		// Draw the solver on top of the maze
 		if (state == SOLVING_MAZE) {
 			solver.Draw(maze.position, show_manhattan_dist);
+
+			if (showing_paths) {
+				for (int p = 0; p < paths.size(); p++) {
+					Point from = paths[p][0];
+					for (int i = 1; i < paths[p].size(); i++) {
+						DrawLineV(maze.CellToPos(from), maze.CellToPos(paths[p][i]), RED);
+						from = paths[p][i];
+					}
+				}
+			}
 		}
 
 		mouse.Draw();

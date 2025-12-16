@@ -15,7 +15,9 @@ public:
 	ray::Vector2 ToVec2();
 
 	Point operator + (Point p);
+	void operator += (Point p);
 	Point operator - (Point p);
+	void operator -= (Point p);
 	bool operator == (Point p);
 	bool operator != (Point p);
 };
