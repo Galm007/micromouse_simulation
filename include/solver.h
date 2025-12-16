@@ -6,7 +6,7 @@
 class Solver {
 private:
 	Point coord = Point(0, 0);
-	Maze floodfill_maze = Maze(ray::Vector2(0.0f, 0.0f));
+	Maze known_maze = Maze(ray::Vector2(0.0f, 0.0f));
 	Maze* maze;
 
 	int manhattan_dist[MAZE_ROWS][MAZE_COLS] = {-1};

@@ -41,7 +41,7 @@ bool showing_paths = false;
 std::vector<std::vector<Point>> paths;
 
 // Core entities
-Maze maze = Maze(ray::Vector2(50.0f, 100.0f));
+Maze maze = Maze(ray::Vector2(80.0f, 100.0f));
 Solver solver = Solver(&maze, Point(0, 0));
 Mouse mouse = Mouse(&maze, Point(0, 0));
 
@@ -146,11 +146,13 @@ void FileDialogLogic() {
 				// Save maze layout and starting position to file
 				maze.SaveToFile(filename, solver.starting_coord);
 				maze_filename = filename;
+				SetWindowTitle(file_dialog_state.fileNameText);
 			} else if (state == LOADING_MAZE) {
 				// Load maze layout and starting position from file
 				if (ray::FileExists(filename)) {
 					maze.LoadFromFile(filename, &solver.starting_coord);
 					maze_filename = filename;
+					SetWindowTitle(file_dialog_state.fileNameText);
 				} else {
 					std::cout << "Unable to open file: " << filename << std::endl;
 				}
@@ -247,9 +249,11 @@ int main(int argc, char** argv) {
 		std::cout << "Restoring previous session..." << std::endl;
 		maze_filename = "backup.maz";
 		maze.LoadFromFile(maze_filename, &solver.starting_coord);
+		SetWindowTitle(maze_filename.c_str());
 	} else if (argc == 2) {
 		maze_filename = argv[1];
 		maze.LoadFromFile(maze_filename, &solver.starting_coord);
+		SetWindowTitle(maze_filename.c_str());
 	} else {
 		std::cout << "Too many input arguments!" << std::endl;
 		return 1;
@@ -293,7 +297,7 @@ int main(int argc, char** argv) {
 
 		// Color the target area green
 		DrawRectangleV(
-			maze.position + ray::Vector2(7.0f, 7.0f) * MAZE_CELL_SIZE,
+			maze.CornerToPos(Point(7, 7)),
 			ray::Vector2(2.0f, 2.0f) * MAZE_CELL_SIZE,
 			ColorAlpha(GREEN, 0.5f)
 		);
@@ -343,6 +347,7 @@ int main(int argc, char** argv) {
 		if (state == SOLVING_MAZE) {
 			solver.Draw(maze.position, show_manhattan_dist);
 
+			// Draw the solutions
 			if (showing_paths) {
 				for (int p = 0; p < paths.size(); p++) {
 					Point from = paths[p][0];

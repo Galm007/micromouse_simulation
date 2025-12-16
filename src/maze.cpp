@@ -101,38 +101,32 @@ void Maze::Clear() {
 void Maze::Draw(Color wall_clr, Color dot_clr) {
 	for (int row = 0; row < MAZE_ROWS; row++) {
 		for (int col = 0; col < MAZE_COLS; col++) {
-			bool left_wall = vertical_walls[row][col];
-			bool top_wall = horizontal_walls[row][col];
-
-			int x = col * MAZE_CELL_SIZE + position.x;
-			int y = row * MAZE_CELL_SIZE + position.y;
+			Vector2 pos = CornerToPos(Point(col, row));
 
 			// Draw walls
-			if (left_wall) {
-				DrawLine(x, y, x, y + MAZE_CELL_SIZE, wall_clr);
+			if (vertical_walls[row][col]) {
+				DrawLineV(pos, CornerToPos(Point(col, row + 1)), wall_clr);
 			}
-			if (top_wall) {
-				DrawLine(x, y, x + MAZE_CELL_SIZE, y, wall_clr);
+			if (horizontal_walls[row][col]) {
+				DrawLineV(pos, CornerToPos(Point(col + 1, row)), wall_clr);
 			}
 
 			// Draw corner
-			DrawCircle(x, y, 3.0f, dot_clr);
+			DrawCircleV(pos, 3.0f, dot_clr);
 		}
 	}
 
-	int right = position.x + MAZE_COLS * MAZE_CELL_SIZE;
-	int bottom = position.y + MAZE_ROWS * MAZE_CELL_SIZE;
-
 	// Draw the bottom and right edges of the maze
-	DrawLine(right, position.y, right, bottom, wall_clr);
-	DrawLine(position.x, bottom, right, bottom, wall_clr);
+	Vector2 edge = CornerToPos(Point(MAZE_COLS, MAZE_ROWS));
+	DrawLine(edge.x, position.y, edge.x, edge.y, wall_clr);
+	DrawLine(position.x, edge.y, edge.x, edge.y, wall_clr);
 
 	// Draw the bottom and right corners of the maze
 	for (int row = 0; row <= MAZE_ROWS; row++) {
-		DrawCircle(right, row * MAZE_CELL_SIZE + position.y, 3.0f, dot_clr);
+		DrawCircleV(CornerToPos(Point(MAZE_COLS, row)), 3.0f, dot_clr);
 	}
 	for (int col = 0; col < MAZE_COLS; col++) {
-		DrawCircle(col * MAZE_CELL_SIZE + position.x, bottom, 3.0f, dot_clr);
+		DrawCircleV(CornerToPos(Point(col, MAZE_ROWS)), 3.0f, dot_clr);
 	}
 }
 
@@ -145,6 +139,7 @@ void Maze::Draw(Color wall_clr, Color dot_clr) {
 // - 2 means only top wall exists
 // - 3 means both left and top walls exist
 // - Lines 17 and 18 contain the solver's starting row and column, respectively
+// - Right and bottom edges of the maze will automatically have walls
 
 int Maze::SaveToFile(std::string filename, Point starting_coord) {
 	std::ofstream file;
@@ -154,6 +149,7 @@ int Maze::SaveToFile(std::string filename, Point starting_coord) {
 		return 0;
 	}
 
+	// Save walls
 	for (int row = 0; row < MAZE_ROWS; row++) {
 		std::string line;
 		for (int col = 0; col < MAZE_COLS; col++) {
@@ -174,6 +170,7 @@ int Maze::SaveToFile(std::string filename, Point starting_coord) {
 		file << line << '\n';
 	}
 
+	// Save starting coords for solver
 	file << std::to_string(starting_coord.y) << '\n';
 	file << std::to_string(starting_coord.x) << '\n';
 
@@ -191,47 +188,40 @@ int Maze::LoadFromFile(std::string filename, Point* starting_coord) {
 		return 0;
 	}
 
-	// Each cell is represented by a number:
-	// 0 - no left or upper walls
-	// 1 - wall on the left
-	// 2 - wall on the top
-	// 3 - wall on both left and top
-	
-	// Maze edges will automatically have walls
-
+	// Load walls
 	std::string line;
 	for (int row = 0; row < MAZE_ROWS && std::getline(file, line); row++) {
 		int col = 0;
 		for (char& c : line) {
 			switch (c) {
-				case '0':
-					horizontal_walls[row][col] = false;
-					vertical_walls[row][col] = false;
-					break;
-				case '1':
-					horizontal_walls[row][col] = false;
-					vertical_walls[row][col] = true;
-					break;
-				case '2':
-					horizontal_walls[row][col] = true;
-					vertical_walls[row][col] = false;
-					break;
-				case '3':
-					horizontal_walls[row][col] = true;
-					vertical_walls[row][col] = true;
-					break;
-				case '\n':
-					break;
-				default:
-					std::cout << "Invalid cell state: " << c << std::endl;
-					return 0;
+			case '0':
+				horizontal_walls[row][col] = false;
+				vertical_walls[row][col] = false;
+				break;
+			case '1':
+				horizontal_walls[row][col] = false;
+				vertical_walls[row][col] = true;
+				break;
+			case '2':
+				horizontal_walls[row][col] = true;
+				vertical_walls[row][col] = false;
+				break;
+			case '3':
+				horizontal_walls[row][col] = true;
+				vertical_walls[row][col] = true;
+				break;
+			case '\n':
+				break;
+			default:
+				std::cout << "Invalid cell state: " << c << std::endl;
+				return 0;
 			}
 			col++;
 		}
 	}
 
-	std::string row_line;
-	std::string col_line;
+	// Load starting coord for solver
+	std::string row_line, col_line;
 	if (std::getline(file, row_line) && std::getline(file, col_line)) {
 		starting_coord->y = std::stoi(row_line);
 		starting_coord->x = std::stoi(col_line);

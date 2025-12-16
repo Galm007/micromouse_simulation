@@ -9,7 +9,7 @@
 #include <tuple>
 
 Solver::Solver(Maze* maze, Point starting_coord) {
-	this->floodfill_maze.position = maze->position;
+	this->known_maze.position = maze->position;
 	this->maze = maze;
 	this->starting_coord = starting_coord;
 	Reset();
@@ -23,7 +23,7 @@ Solver::~Solver() {
 void Solver::Reset() {
 	coord = starting_coord;
 	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
-	floodfill_maze.Clear();
+	known_maze.Clear();
 
 	memset(visited_coords, 0, sizeof(visited_coords));
 	visited_coords[coord.y][coord.x] = true;
@@ -35,16 +35,16 @@ void Solver::Reset() {
 // Update knowledge about existing walls based on current location
 void Solver::UpdateWalls() {
 	if (maze->HWallAt(coord)) {
-		floodfill_maze.SetWalls(coord, coord + Point(1, 0), true);
+		known_maze.SetWalls(coord, coord + Point(1, 0), true);
 	}
 	if (maze->HWallAt(coord + Point(0, 1))) {
-		floodfill_maze.SetWalls(coord + Point(0, 1), coord + Point(1, 1), true);
+		known_maze.SetWalls(coord + Point(0, 1), coord + Point(1, 1), true);
 	}
 	if (maze->VWallAt(coord)) {
-		floodfill_maze.SetWalls(coord, coord + Point(0, 1), true);
+		known_maze.SetWalls(coord, coord + Point(0, 1), true);
 	}
 	if (maze->VWallAt(coord + Point(1, 0))) {
-		floodfill_maze.SetWalls(coord + Point(1, 0), coord + Point(1, 1), true);
+		known_maze.SetWalls(coord + Point(1, 0), coord + Point(1, 1), true);
 	}
 }
 
@@ -64,37 +64,37 @@ void Solver::Floodfill(bool visited_coords_only) {
 	}
 
 	while (!q.empty()) {
-		Point ff_coord = std::get<0>(q.front());
+		Point cell = std::get<0>(q.front());
 		int next_dist = std::get<1>(q.front()) + 1;
 		q.pop();
 
-		if (ff_coord.y > 0 // Check top wall
-			&& !floodfill_maze.HWallAt(ff_coord)
-			&& manhattan_dist[ff_coord.y - 1][ff_coord.x] == -1
-			&& (!visited_coords_only || (visited_coords_only && visited_coords[ff_coord.y - 1][ff_coord.x]))) {
-			manhattan_dist[ff_coord.y - 1][ff_coord.x] = next_dist;
-			q.push(std::make_tuple(ff_coord - Point(0, 1), next_dist));
+		if (cell.y > 0 // Check top wall
+			&& !known_maze.HWallAt(cell)
+			&& manhattan_dist[cell.y - 1][cell.x] == -1
+			&& (!visited_coords_only || (visited_coords_only && visited_coords[cell.y - 1][cell.x]))) {
+			manhattan_dist[cell.y - 1][cell.x] = next_dist;
+			q.push(std::make_tuple(cell - Point(0, 1), next_dist));
 		}
-		if (ff_coord.y < MAZE_ROWS - 1 // Check bottom wall
-			&& !floodfill_maze.HWallAt(ff_coord + Point(0, 1))
-			&& manhattan_dist[ff_coord.y + 1][ff_coord.x] == -1
-			&& (!visited_coords_only || (visited_coords_only && visited_coords[ff_coord.y + 1][ff_coord.x]))) {
-			manhattan_dist[ff_coord.y + 1][ff_coord.x] = next_dist;
-			q.push(std::make_tuple(ff_coord + Point(0, 1), next_dist));
+		if (cell.y < MAZE_ROWS - 1 // Check bottom wall
+			&& !known_maze.HWallAt(cell + Point(0, 1))
+			&& manhattan_dist[cell.y + 1][cell.x] == -1
+			&& (!visited_coords_only || (visited_coords_only && visited_coords[cell.y + 1][cell.x]))) {
+			manhattan_dist[cell.y + 1][cell.x] = next_dist;
+			q.push(std::make_tuple(cell + Point(0, 1), next_dist));
 		}
-		if (ff_coord.x > 0 // Check left wall
-			&& !floodfill_maze.VWallAt(ff_coord)
-			&& manhattan_dist[ff_coord.y][ff_coord.x - 1] == -1
-			&& (!visited_coords_only || (visited_coords_only && visited_coords[ff_coord.y][ff_coord.x - 1]))) {
-			manhattan_dist[ff_coord.y][ff_coord.x - 1] = next_dist;
-			q.push(std::make_tuple(ff_coord - Point(1, 0), next_dist));
+		if (cell.x > 0 // Check left wall
+			&& !known_maze.VWallAt(cell)
+			&& manhattan_dist[cell.y][cell.x - 1] == -1
+			&& (!visited_coords_only || (visited_coords_only && visited_coords[cell.y][cell.x - 1]))) {
+			manhattan_dist[cell.y][cell.x - 1] = next_dist;
+			q.push(std::make_tuple(cell - Point(1, 0), next_dist));
 		}
-		if (ff_coord.x < MAZE_COLS - 1 // Check right wall
-			&& !floodfill_maze.VWallAt(ff_coord + Point(1, 0))
-			&& manhattan_dist[ff_coord.y][ff_coord.x + 1] == -1
-			&& (!visited_coords_only || (visited_coords_only && visited_coords[ff_coord.y][ff_coord.x + 1]))) {
-			manhattan_dist[ff_coord.y][ff_coord.x + 1] = next_dist;
-			q.push(std::make_tuple(ff_coord + Point(1, 0), next_dist));
+		if (cell.x < MAZE_COLS - 1 // Check right wall
+			&& !known_maze.VWallAt(cell + Point(1, 0))
+			&& manhattan_dist[cell.y][cell.x + 1] == -1
+			&& (!visited_coords_only || (visited_coords_only && visited_coords[cell.y][cell.x + 1]))) {
+			manhattan_dist[cell.y][cell.x + 1] = next_dist;
+			q.push(std::make_tuple(cell + Point(1, 0), next_dist));
 		}
 	}
 }
@@ -112,25 +112,25 @@ int Solver::Step() {
 	// exist, its fine to take it.
 	for (int i = 0; i < 2; i++) {
 		if (coord.y > 0 // Check top cell
-			&& !floodfill_maze.HWallAt(coord)
+			&& !known_maze.HWallAt(coord)
 			&& manhattan_dist[coord.y - 1][coord.x] == next_dist
 			&& (moved || !visited_coords[coord.y - 1][coord.x])) {
 			coord.y--;
 			break;
 		} else if (coord.y < MAZE_ROWS - 1 // Check bottom cell
-			&& !floodfill_maze.HWallAt(coord + Point(0, 1))
+			&& !known_maze.HWallAt(coord + Point(0, 1))
 			&& manhattan_dist[coord.y + 1][coord.x] == next_dist
 			&& (moved || !visited_coords[coord.y + 1][coord.x])) {
 			coord.y++;
 			break;
 		} else if (coord.x > 0 // Check left cell
-			&& !floodfill_maze.VWallAt(coord)
+			&& !known_maze.VWallAt(coord)
 			&& manhattan_dist[coord.y][coord.x - 1] == next_dist
 			&& (moved || !visited_coords[coord.y][coord.x - 1])) {
 			coord.x--;
 			break;
 		} else if (coord.x < MAZE_COLS - 1 // Check right cell
-			&& !floodfill_maze.VWallAt(coord + Point(1, 0))
+			&& !known_maze.VWallAt(coord + Point(1, 0))
 			&& manhattan_dist[coord.y][coord.x + 1] == next_dist
 			&& (moved || !visited_coords[coord.y][coord.x + 1])) {
 			coord.x++;
@@ -148,6 +148,12 @@ int Solver::Step() {
 	return IsInTarget(coord);
 }
 
+// Searches the known maze in parallel using independent "agents"
+// Agents:
+// - Follow down the manhattan distances
+// - Die after meeting a dead end
+// - Spawn other agents at junctions
+// - Cannot go to a cell that has already been visited by another agent
 std::vector<std::vector<Point>> Solver::FindSolutions() {
 	std::vector<std::vector<Point>> solutions;
 	std::stack<Point> agents;
@@ -158,7 +164,7 @@ std::vector<std::vector<Point>> Solver::FindSolutions() {
 
 	agents.push(starting_coord);
 	paths.push({});
-	memset(visited_coords, 0, sizeof(visited_coords));
+	memset(visited_coords, 0, sizeof(visited_coords)); // Reusing this array
 
 	while (!agents.empty()) {
 		Point a = agents.top();
@@ -178,7 +184,7 @@ std::vector<std::vector<Point>> Solver::FindSolutions() {
 
 			if (a.y > 0
 				&& manhattan_dist[a.y - 1][a.x] == next_dist
-				&& !floodfill_maze.HWallAt(a)
+				&& !known_maze.HWallAt(a)
 				&& !visited_coords[a.y - 1][a.x]) {
 				if (move_dir == Point(0, 0)) {
 					move_dir = Point(0, -1);
@@ -189,7 +195,7 @@ std::vector<std::vector<Point>> Solver::FindSolutions() {
 			}
 			if (a.y < MAZE_ROWS - 1
 				&& manhattan_dist[a.y + 1][a.x] == next_dist
-				&& !floodfill_maze.HWallAt(a + Point(0, 1))
+				&& !known_maze.HWallAt(a + Point(0, 1))
 				&& !visited_coords[a.y + 1][a.x]) {
 				if (move_dir == Point(0, 0)) {
 					move_dir = Point(0, 1);
@@ -200,7 +206,7 @@ std::vector<std::vector<Point>> Solver::FindSolutions() {
 			}
 			if (a.x > 0
 				&& manhattan_dist[a.y][a.x - 1] == next_dist
-				&& !floodfill_maze.VWallAt(a)
+				&& !known_maze.VWallAt(a)
 				&& !visited_coords[a.y][a.x - 1]) {
 				if (move_dir == Point(0, 0)) {
 					move_dir = Point(-1, 0);
@@ -211,7 +217,7 @@ std::vector<std::vector<Point>> Solver::FindSolutions() {
 			}
 			if (a.x < MAZE_COLS - 1
 				&& manhattan_dist[a.y][a.x + 1] == next_dist
-				&& !floodfill_maze.VWallAt(a + Point(1, 0))
+				&& !known_maze.VWallAt(a + Point(1, 0))
 				&& !visited_coords[a.y][a.x + 1]) {
 				if (move_dir == Point(0, 0)) {
 					move_dir = Point(1, 0);
@@ -235,8 +241,8 @@ std::vector<std::vector<Point>> Solver::FindSolutions() {
 
 void Solver::Draw(ray::Vector2 pos, bool show_manhattan_dist) {
 	// Draw known walls
-	floodfill_maze.position = pos;
-	floodfill_maze.Draw(BLACK, ColorAlpha(BLACK, 0.0f));
+	known_maze.position = pos;
+	known_maze.Draw(BLACK, ColorAlpha(BLACK, 0.0f));
 
 	// Draw current coord
 	DrawCircleV(maze->CellToPos(coord), MAZE_CELL_SIZE * 0.4f, ORANGE);

@@ -18,6 +18,14 @@ public:
 	void operator += (Point p);
 	Point operator - (Point p);
 	void operator -= (Point p);
+	Point operator * (Point p);
+	void operator *= (Point p);
+	Point operator / (Point p);
+	void operator /= (Point p);
+	Point operator * (int n);
+	void operator *= (int n);
+	Point operator / (int n);
+	void operator /= (int n);
 	bool operator == (Point p);
 	bool operator != (Point p);
 };
