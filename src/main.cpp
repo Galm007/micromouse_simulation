@@ -1,4 +1,3 @@
-#include "Functions.hpp"
 #include <iostream>
 #include <raylib.h>
 #include <raylib-cpp.hpp>
@@ -159,11 +158,11 @@ void FileDialogLogic() {
 					maze_filename = filename;
 					SetWindowTitle(file_dialog_state.fileNameText);
 				} else {
-					ConsoleLog("Unable to open file: " + filename);
+					ConsoleError("Unable to open file: " + filename);
 				}
 			}
 		} else {
-			ConsoleLog("Invalid filetype!");
+			ConsoleError("Invalid filetype!");
 		}
 
 		file_dialog_state.SelectFilePressed = false;

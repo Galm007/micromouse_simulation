@@ -1,11 +1,11 @@
-#include "maze.h"
-#include "console.h"
-
 #include <algorithm>
 #include <fstream>
 #include <string>
 #include <raylib.h>
 #include <raylib-cpp.hpp>
+
+#include "maze.h"
+#include "console.h"
 
 namespace ray = raylib;
 
@@ -145,7 +145,7 @@ int Maze::SaveToFile(std::string filename, Point starting_coord) {
 	std::ofstream file;
 	file.open(filename);
 	if (!file.is_open()) {
-		ConsoleLog("Unable to open file: " + filename);
+		ConsoleError("Unable to open file: " + filename);
 		return 0;
 	}
 
@@ -174,7 +174,7 @@ int Maze::SaveToFile(std::string filename, Point starting_coord) {
 	file << std::to_string(starting_coord.y) << '\n';
 	file << std::to_string(starting_coord.x) << '\n';
 
-	ConsoleLog("Saved maze layout to: " + filename);
+	ConsoleLog("Saved maze to: " + filename);
 
 	file.close();
 	return 1;
@@ -184,7 +184,7 @@ int Maze::LoadFromFile(std::string filename, Point* starting_coord) {
 	std::ifstream file;
 	file.open(filename);
 	if (!file.is_open()) {
-		ConsoleLog("Unable to open file: " + filename);
+		ConsoleError("Unable to open file: " + filename);
 		return 0;
 	}
 
@@ -210,10 +210,12 @@ int Maze::LoadFromFile(std::string filename, Point* starting_coord) {
 				horizontal_walls[row][col] = true;
 				vertical_walls[row][col] = true;
 				break;
+			case '\r':
 			case '\n':
+			case '\0':
 				break;
 			default:
-				ConsoleLog(std::string("Invalid cell state: ") + c);
+				ConsoleError(std::string("Invalid cell state: ") + c);
 				return 0;
 			}
 			col++;
@@ -230,7 +232,7 @@ int Maze::LoadFromFile(std::string filename, Point* starting_coord) {
 		return 0;
 	}
 
-	ConsoleLog("Loaded maze layout: " + filename);
+	ConsoleLog("Loaded maze: " + filename);
 
 	file.close();
 	return 1;

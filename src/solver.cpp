@@ -1,4 +1,3 @@
-#include "solver.h"
 #include <algorithm>
 #include <cstring>
 #include <raylib.h>
@@ -7,6 +6,8 @@
 #include <stack>
 #include <string>
 #include <tuple>
+
+#include "solver.h"
 
 Solver::Solver(Maze* maze, Point starting_coord) {
 	this->known_maze.position = maze->position;

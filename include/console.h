@@ -7,5 +7,6 @@
 namespace ray = raylib;
 
 void ConsoleLog(std::string msg);
+void ConsoleError(std::string msg);
 void ConsoleDraw(ray::Rectangle rec);
 void ConsoleClear();
