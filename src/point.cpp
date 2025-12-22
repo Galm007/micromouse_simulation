@@ -9,9 +9,9 @@ Point::Point(int a) {
 	this->x = this->y = a;
 }
 
-Point::~Point() {
+Point::Point() { }
 
-}
+Point::~Point() { }
 
 ray::Vector2 Point::ToVec2() {
 	return ray::Vector2(x, y);

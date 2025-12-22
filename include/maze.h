@@ -10,7 +10,7 @@ namespace ray = raylib;
 
 #define MAZE_ROWS 16
 #define MAZE_COLS 16
-#define MAZE_CELL_SIZE 40
+#define MAZE_CELL_SIZE 45
 
 class Maze {
 private:
@@ -30,8 +30,7 @@ public:
 
 	static bool IsWallValid(Point from_corner, Point to_corner);
 	void SetWalls(Point from_corner, Point to_corner, bool state);
-	bool HWallAt(Point corner);
-	bool VWallAt(Point corner);
+	bool WallAt(bool horizontal, Point coord);
 	void Clear();
 
 	void Draw(Color wall_clr, Color dot_clr);

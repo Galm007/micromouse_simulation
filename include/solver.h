@@ -2,6 +2,14 @@
 
 #include "maze.h"
 #include "point.h"
+#include "direction.h"
+
+struct Edge {
+	bool visited = false;
+	Direction dir = DIR_UNKNOWN;
+	float ff_val = -1.0f;
+	int same_dir = 0;
+};
 
 class Solver {
 private:
@@ -9,8 +17,10 @@ private:
 	Maze known_maze = Maze(ray::Vector2(0.0f, 0.0f));
 	Maze* maze;
 
-	int manhattan_dist[MAZE_ROWS][MAZE_COLS] = {-1};
-	bool visited_coords[MAZE_ROWS][MAZE_COLS] = {false};
+	Edge edges[2][MAZE_ROWS + 1][MAZE_COLS + 1] = { }; // edges[horizontal][row][column]
+
+	void UpdateVisitedEdges();
+	void UpdateWalls();
 
 public:
 	std::vector<Point> target_coords;
@@ -20,12 +30,10 @@ public:
 	~Solver();
 
 	void Reset();
-	void UpdateWalls();
-	void Floodfill(bool visited_coords_only);
-	bool IsInTarget(Point coordinate);
+	void Floodfill(bool visited_edges_only);
 	int Step();
 
-	std::vector<std::vector<Point>> FindSolutions();
+	std::vector<ray::Vector2> GetPath();
 
-	void Draw(ray::Vector2 pos, bool show_manhattan_dist);
+	void Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_font);
 };

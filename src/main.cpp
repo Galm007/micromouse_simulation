@@ -33,16 +33,16 @@ std::string maze_filename;
 Point closest_corner_to_mouse = Point(0);
 Point edit_wall_from = Point(0);
 bool maze_is_editable = false;
-bool show_manhattan_dist = false;
+bool show_floodfill_vals = false;
 bool show_full_map = true;
 float solver_step_interval = 0.90f;
 float step_timer = 1.0f;
 bool panning_view = false;
-bool showing_paths = false;
-std::vector<std::vector<Point>> paths;
+std::vector<ray::Vector2> path;
+Font roboto;
 
 // Core entities
-Maze maze = Maze(ray::Vector2(100.0f, 100.0f));
+Maze maze = Maze(ray::Vector2(100.0f, 80.0f));
 Solver solver = Solver(&maze, Point(0, 0));
 Mouse mouse = Mouse(&maze, Point(0, 0));
 
@@ -57,8 +57,8 @@ ray::Rectangle ui_layout_recs[] = {
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 870.0f, 280.0f, 50.0f), // Clear Maze
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 190.0f, 280.0f, 50.0f), // Run Solver
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 490.0f, 280.0f, 50.0f), // Stop Solver
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 260.0f, 30.0f, 30.0f), // Manhattan Distance
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 320.0f, 30.0f, 30.0f), // Full Map
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 260.0f, 30.0f, 30.0f), // Show FloodFill Values
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 320.0f, 30.0f, 30.0f), // Show Full Map
 	ray::Rectangle(ui_anchor.x + 70.0f, ui_anchor.y + 380.0f, 160.0f, 30.0f), // Solver Speed Slider
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 430.0f, 280.0f, 50.0f), // Skip Animation
 	ray::Rectangle(console_anchor.x, console_anchor.y, 900.0f, 150.0f), // Console
@@ -177,20 +177,17 @@ void FileDialogLogic() {
 }
 
 void SolvingMaze_Update() {
-	if ((step_timer -= GetFrameTime()) <= 0.0f && !showing_paths) {
+	if ((step_timer -= GetFrameTime()) <= 0.0f) {
 		step_timer = 1.0f - solver_step_interval;
 
 		// Calculate the next step and move
-		if (solver.Step()) {
-			if (solver.target_coords[0] != solver.starting_coord) {
-				// When the goal is reached, set the destination back to the starting coord
-				solver.target_coords = { solver.starting_coord };
-				step_timer = 1.0f;
-			} else {
-				paths = solver.FindSolutions();
-				showing_paths = true;
-			}
-		}
+		// if (solver.Step()) {
+		// 	if (solver.target_coords[0] != solver.starting_coord) {
+		// 		// When the goal is reached, set the destination back to the starting coord
+		// 		solver.target_coords = { solver.starting_coord };
+		// 		step_timer = 1.0f;
+		// 	}
+		// }
 	}
 }
 
@@ -219,23 +216,23 @@ void DrawUI() {
 	}
 	if (!maze_is_editable && GuiButton(ui_layout_recs[5], "RUN SOLVER")) {
 		solver.Reset();
+		path = solver.GetPath();
 		maze_is_editable = false;
 		step_timer = 0.5f;
-		showing_paths = false;
 		state = SOLVING_MAZE;
 	}
 	if (state == SOLVING_MAZE) {
 		if (GuiButton(ui_layout_recs[6], "STOP SOLVER")) {
 			state = IDLE;
 		}
-		GuiCheckBox(ui_layout_recs[7], "Manhattan Distance", &show_manhattan_dist);
-		GuiCheckBox(ui_layout_recs[8], "Full Map", &show_full_map);
+		GuiCheckBox(ui_layout_recs[7], "Show FloodFill Values", &show_floodfill_vals);
+		GuiCheckBox(ui_layout_recs[8], "Show Full Map", &show_full_map);
 		GuiSlider(ui_layout_recs[9], "SLOW", "FAST", &solver_step_interval, 0.1f, 1.0f);
 		if (GuiButton(ui_layout_recs[10], "SKIP ANIMATION")) {
-			while (!showing_paths) {
-				step_timer = 0.0f;
-				SolvingMaze_Update();
-			}
+			// while (!showing_paths) {
+			// 	step_timer = 0.0f;
+			// 	SolvingMaze_Update();
+			// }
 		}
 	}
 	ConsoleDraw(ui_layout_recs[11]);
@@ -271,6 +268,9 @@ int main(int argc, char** argv) {
 	file_dialog_state = InitGuiWindowFileDialog(GetWorkingDirectory());
 	file_dialog_state.windowBounds = ray::Rectangle(100.0f, 250.0f, 1000.0f, 500.0f);
 	file_dialog_state.saveFileMode = true;
+
+	// Load Roboto font
+	roboto = LoadFont("static/Roboto-Regular.ttf");
 
 	while (!window.ShouldClose()) {
 		// Update logic
@@ -353,22 +353,14 @@ int main(int argc, char** argv) {
 
 		// Draw the solver on top of the maze
 		if (state == SOLVING_MAZE) {
-			solver.Draw(maze.position, show_manhattan_dist);
+			solver.Draw(maze.position, show_floodfill_vals, roboto);
 
-			// Draw the solutions
-			if (showing_paths) {
-				for (int p = 0; p < paths.size(); p++) {
-					Point from = paths[p][0];
-					for (int i = 1; i < paths[p].size(); i++) {
-						DrawLineEx(
-							maze.CellToPos(from),
-							maze.CellToPos(paths[p][i]),
-							2.0f,
-							PURPLE
-						);
-						from = paths[p][i];
-					}
-				}
+			// Draw the solution
+			Vector2 from = path[0];
+			for (int i = 1; i < path.size(); i++) {
+				DrawLineEx(from, path[i], 2.0f, PURPLE);
+				DrawCircleLinesV(path[i], 5.0f, PURPLE);
+				from = path[i];
 			}
 		}
 
