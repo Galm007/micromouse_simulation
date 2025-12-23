@@ -3,6 +3,7 @@
 #include "maze.h"
 #include "point.h"
 #include "direction.h"
+#include <tuple>
 
 struct Edge {
 	bool visited = false;
@@ -18,7 +19,7 @@ private:
 	Maze* maze;
 
 	Edge edges[2][MAZE_ROWS + 1][MAZE_COLS + 1] = { }; // edges[horizontal][row][column]
-	std::vector<Direction> solution;
+	std::vector<std::tuple<bool, Point>> solution;
 
 	void UpdateVisitedEdges();
 	void UpdateWalls();

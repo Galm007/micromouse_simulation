@@ -70,21 +70,18 @@ void Solver::Floodfill(bool visited_edges_only) {
 		edges[horizontal][row][col].same_dir = 0;
 	);
 
-	// Populate queue with edges of target cells
+	// Populate queue with edges of current cell
 	std::queue<std::tuple<bool, Point>> q;
-	for (Point target : target_coords) {
-		bool horizontals[4];
-		Point edge_coords[4];
-		GetEdgesOfCell(horizontals, edge_coords, target);
-
-		for (int i = 0; i < 4; i++) {
-			bool h = horizontals[i];
-			Point e = edge_coords[i];
-			if (!maze->WallAt(h, e)) {
-				edges[h][e.y][e.x].ff_val = 0.0f;
-				edges[h][e.y][e.x].dir = (Direction)(1 + 3 * i);
-				q.push(std::make_tuple(h, e));
-			}
+	bool horizontals[4];
+	Point edge_coords[4];
+	GetEdgesOfCell(horizontals, edge_coords, coord);
+	for (int i = 0; i < 4; i++) {
+		bool h = horizontals[i];
+		Point e = edge_coords[i];
+		if (!maze->WallAt(h, e)) {
+			edges[h][e.y][e.x].ff_val = 0.0f;
+			edges[h][e.y][e.x].dir = (Direction)(1 + 3 * i);
+			q.push(std::make_tuple(h, e));
 		}
 	}
 
@@ -93,58 +90,41 @@ void Solver::Floodfill(bool visited_edges_only) {
 		Point edge_coord = std::get<1>(q.front());
 		q.pop();
 
-		// Prioritize making edges that share a common direction
-		int common_test_dir_i = 0;
-		while (common_test_dir_i != -1) {
-			common_test_dir_i = -1;
+		Edge edge = edges[horizontal][edge_coord.y][edge_coord.x];
+		Direction normalized_dir = NormalizeDir(edge.dir);
 
-			Edge edge = edges[horizontal][edge_coord.y][edge_coord.x];
-			Direction normalized_dir = NormalizeDir(edge.dir);
+		// Find the other 3 edges of the cell to evaluate, based on the direction
+		GetNextPossibleEdges(horizontals, edge_coords, normalized_dir);
+		for (int i = 0; i < 3; i++) {
+			Direction new_dir = (Direction)(normalized_dir + i);
+			Point new_coord = edge_coord + edge_coords[i];
+			Edge& new_edge = edges[horizontals[i]][new_coord.y][new_coord.x];
 
-			// Find the other 3 edges of the cell to evaluate, based on the direction
-			bool test_horizontals[3];
-			Point test_edge_coords[3];
-			GetNextPossibleEdges(test_horizontals, test_edge_coords, normalized_dir);
+			bool within_bounds = (normalized_dir == DIR_UP && new_coord.y >= 0)
+				|| (normalized_dir == DIR_DOWN && new_coord.y < MAZE_ROWS)
+				|| (normalized_dir == DIR_LEFT && new_coord.x >= 0)
+				|| (normalized_dir == DIR_RIGHT && new_coord.x < MAZE_COLS);
 
-			// Evaluate each test edge
-			for (int i = 0; i < 3; i++) {
-				Direction new_dir = (Direction)(normalized_dir + i);
-				Point new_coord = edge_coord + test_edge_coords[i];
-				Edge& new_edge = edges[test_horizontals[i]][new_coord.y][new_coord.x];
+			if (within_bounds
+				&& (!visited_edges_only || (visited_edges_only && new_edge.visited))
+				&& !maze->WallAt(horizontals[i], new_coord)
+				&& new_edge.ff_val < 0.0f) {
+				// Set edge values and push it to queue
+				new_edge.ff_val = edge.ff_val + (new_dir == normalized_dir ? 1.0f : 0.71f);
+				new_edge.dir = new_dir;
+				q.push(std::make_tuple(horizontals[i], new_coord));
 
-				bool within_bounds = (normalized_dir == DIR_UP && new_coord.y >= 0)
-					|| (normalized_dir == DIR_DOWN && new_coord.y < MAZE_ROWS)
-					|| (normalized_dir == DIR_LEFT && new_coord.x >= 0)
-					|| (normalized_dir == DIR_RIGHT && new_coord.x < MAZE_COLS);
-
-				if (within_bounds
-					&& (!visited_edges_only || (visited_edges_only && new_edge.visited))
-					&& !maze->WallAt(test_horizontals[i], new_coord)
-					&& new_edge.ff_val < 0.0f) {
-					// Set edge values and push it to queue
-					new_edge.ff_val = edge.ff_val + (new_dir == normalized_dir ? 1.0f : 0.71f);
-					new_edge.dir = new_dir;
-					q.push(std::make_tuple(test_horizontals[i], new_coord));
-
-					// If they share a common direction, remember it
-					if (SimilarDirections(new_edge.dir, edge.dir)) {
-						new_edge.same_dir = edge.same_dir + 1;
-						common_test_dir_i = i;
-					}
+				// Keep track of edges that share a common direction
+				if (SimilarDirections(new_edge.dir, edge.dir)) {
+					new_edge.same_dir = edge.same_dir + 1;
 				}
-			}
-
-			if (common_test_dir_i != -1) {
-				// Continue going in the shared common direction
-				edge_coord += test_edge_coords[common_test_dir_i];
-				horizontal = test_horizontals[common_test_dir_i];
 			}
 		}
 	}
 }
 
 void Solver::UpdateSolution() {
-	solution = { DIR_UNKNOWN };
+	solution = { };
 
 	Point edge_coord;
 	bool horizontal;
@@ -154,16 +134,18 @@ void Solver::UpdateSolution() {
 	edge.ff_val = 10000.0f;
 	bool horizontals[4];
 	Point edge_coords[4];
-	GetEdgesOfCell(horizontals, edge_coords, coord);
-	for (int i = 0; i < 4; i++) {
-		Edge new_edge = edges[horizontals[i]][edge_coords[i].y][edge_coords[i].x];
-		if (new_edge.ff_val > 0.0f && new_edge.ff_val < edge.ff_val) {
-			edge_coord = edge_coords[i];
-			horizontal = horizontals[i];
-			edge = new_edge;
-			solution[0] = (Direction)(1 + 3 * i);
+	for (int i = 0; i < target_coords.size(); i++) {
+		GetEdgesOfCell(horizontals, edge_coords, target_coords[i]);
+		for (int i = 0; i < 4; i++) {
+			Edge new_edge = edges[horizontals[i]][edge_coords[i].y][edge_coords[i].x];
+			if (new_edge.ff_val > 0.0f && new_edge.ff_val < edge.ff_val) {
+				edge_coord = edge_coords[i];
+				horizontal = horizontals[i];
+				edge = new_edge;
+			}
 		}
 	}
+	std::cout << edge.ff_val << std::endl;
 
 	// Keep going until there are no more edges to go to
 	bool moved = true;
@@ -171,7 +153,7 @@ void Solver::UpdateSolution() {
 		moved = false;
 
 		// Add to path
-		solution.push_back(ReverseDir(edge.dir));
+		solution.push_back(std::make_tuple(horizontal, edge_coord));
 
 		// Find the other 3 edges of the cell to test
 		Direction normalized_dir = ReverseDir(NormalizeDir(edge.dir));
@@ -238,19 +220,12 @@ void Solver::Reset() {
 // }
 
 // Point Solver::Step() {
-// 	// If there is a path that it can go to, but that path has already been
-// 	// explored, ignore it first. Then on the second loop if no other paths
-// 	// exist, its fine to take it.
-// 	// bool moved = false;
-// 	// for (int i = 0; i < 2; i++) {
-// 	// }
+// 	// coord = 
 //
-// 	visited_edges[coord.y][coord.x] = true;
-//
-// 	UpdateWalls();
-// 	Floodfill(false);
-//
-// 	return IsInTarget(coord);
+// 	// UpdateVisitedEdges();
+// 	// UpdateWalls();
+// 	// Floodfill(false);
+// 	// return solution_i < solution.size();
 // }
 
 void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_font) {
@@ -278,9 +253,14 @@ void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_fon
 	}
 
 	// Show path
-	ray::Vector2 from = maze->CellToPos(coord) + DirToTransform(solution[0]) * MAZE_CELL_SIZE * 0.5f;
-	for (int i = 1; i < solution.size(); i++) {
-		ray::Vector2 to = from + DirToTransform(solution[i]) * MAZE_CELL_SIZE;
+	ray::Vector2 from = maze->CellToPos(coord);
+	for (int i = solution.size() - 1; i >= 0; i--) {
+		bool horizontal = std::get<0>(solution[i]);
+		Point edge_coord = std::get<1>(solution[i]);
+		ray::Vector2 to = maze->CornerToPos(edge_coord) + (horizontal
+			? ray::Vector2(MAZE_CELL_SIZE / 2.0f, 0.0f)
+			: ray::Vector2(0.0f, MAZE_CELL_SIZE / 2.0f));
+
 		DrawLineEx(from, to, 2.0f, PURPLE);
 		DrawCircleLinesV(to, 5.0f, PURPLE);
 		from = to;
@@ -304,7 +284,7 @@ void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_fon
 			Vector2 p = maze->CornerToPos(Point(j, i));
 
 			// Horizontal floodfill values
-			if ((ff_val = edges[true][i][j].ff_val) > 0.0f) {
+			if ((ff_val = edges[true][i][j].ff_val) >= 0.0f) {
 				snprintf(
 					buffer,
 					sizeof(buffer),
@@ -324,7 +304,7 @@ void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_fon
 			}
 
 			// Vertical floodfill values
-			if ((ff_val = edges[false][i][j].ff_val) > 0.0f) {
+			if ((ff_val = edges[false][i][j].ff_val) >= 0.0f) {
 				snprintf(
 					buffer,
 					sizeof(buffer),

@@ -148,34 +148,6 @@ bool SimilarDirections(Direction d1, Direction d2) {
 		|| (d1 == DIR_DOWN_RIGHT && d2 == DIR_RIGHT_DOWN) || (d2 == DIR_DOWN_RIGHT && d1 == DIR_RIGHT_DOWN);
 }
 
-ray::Vector2 DirToTransform(Direction dir) {
-	switch (dir) {
-	case DIR_UP:
-		return ray::Vector2(0.0f, -1.0f);
-	case DIR_DOWN:
-		return ray::Vector2(0.0f, 1.0f);
-	case DIR_LEFT:
-		return ray::Vector2(-1.0f, 0.0f);
-	case DIR_RIGHT:
-		return ray::Vector2(1.0f, 0.0f);
-	case DIR_UP_LEFT:
-	case DIR_LEFT_UP:
-		return ray::Vector2(-0.5f, -0.5f);
-	case DIR_UP_RIGHT:
-	case DIR_RIGHT_UP:
-		return ray::Vector2(0.5f, -0.5f);
-	case DIR_DOWN_LEFT:
-	case DIR_LEFT_DOWN:
-		return ray::Vector2(-0.5f, 0.5f);
-	case DIR_DOWN_RIGHT:
-	case DIR_RIGHT_DOWN:
-		return ray::Vector2(0.5f, 0.5f);
-	default:
-		ConsoleError("Direction is Invalid!");
-		return ray::Vector2(0.0f, 0.0f);
-	}
-}
-
 std::string DirToStr(Direction dir) {
 	switch (dir) {
 	case DIR_UP:
