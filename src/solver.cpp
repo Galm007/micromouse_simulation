@@ -220,6 +220,7 @@ void Solver::Reset() {
 	coord = starting_coord;
 	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
 	known_maze.Clear();
+	finished = false;
 
 	FOREACH_EDGE(edges[horizontal][row][col].visited = false;);
 	UpdateVisitedEdges();
@@ -232,14 +233,41 @@ void Solver::Reset() {
 // 	return std::find(target_coords.begin(), target_coords.end(), coordinate) != target_coords.end();
 // }
 
-// Point Solver::Step() {
-// 	// coord = 
-//
-// 	// UpdateVisitedEdges();
-// 	// UpdateWalls();
-// 	// Floodfill(false);
-// 	// return solution_i < solution.size();
-// }
+bool Solver::Step() {
+	bool horizontal = std::get<0>(solution.back());
+	Point edge_coord = std::get<1>(solution.back());
+	solution.pop_back();
+
+	// If a wall blocks the way, recalculate path
+	if (known_maze.WallAt(horizontal, edge_coord)) {
+		Floodfill(false);
+		UpdateSolution();
+
+		horizontal = std::get<0>(solution.back());
+		edge_coord = std::get<1>(solution.back());
+		solution.pop_back();
+	}
+
+	// Move and update known walls
+	Edge edge = edges[horizontal][edge_coord.y][edge_coord.x];
+	coord = DirToCell(edge_coord, edge.dir);
+	UpdateVisitedEdges();
+	UpdateWalls();
+
+	if (solution.size() == 0) {
+		if (target_coords[0] != starting_coord) {
+			// Go back to starting position once goal is found
+			target_coords = { starting_coord };
+			Floodfill(false);
+			UpdateSolution();
+		} else {
+			finished = true;
+			return true;
+		}
+	}
+
+	return false;
+}
 
 void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_font) {
 	// Draw known walls
@@ -266,6 +294,11 @@ void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_fon
 	}
 
 	// Show path
+	if (finished) {
+		target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
+		Floodfill(true);
+		UpdateSolution();
+	}
 	ray::Vector2 from = maze->CellToPos(coord);
 	for (int i = solution.size() - 1; i >= 0; i--) {
 		bool horizontal = std::get<0>(solution[i]);
@@ -277,6 +310,25 @@ void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_fon
 		DrawLineEx(from, to, 2.0f, PURPLE);
 		DrawCircleLinesV(to, 5.0f, PURPLE);
 		from = to;
+	}
+
+	// Show alternative path
+	if (finished) {
+		Floodfill(false);
+		UpdateSolution();
+
+		from = maze->CellToPos(coord);
+		for (int i = solution.size() - 1; i >= 0; i--) {
+			bool horizontal = std::get<0>(solution[i]);
+			Point edge_coord = std::get<1>(solution[i]);
+			ray::Vector2 to = maze->CornerToPos(edge_coord) + (horizontal
+				? ray::Vector2(MAZE_CELL_SIZE / 2.0f, 0.0f)
+				: ray::Vector2(0.0f, MAZE_CELL_SIZE / 2.0f));
+
+			DrawLineEx(from, to, 2.0f, BLACK);
+			DrawCircleLinesV(to, 5.0f, BLACK);
+			from = to;
+		}
 	}
 
 	// Show manhattan distance of each cell from the goal

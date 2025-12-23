@@ -20,6 +20,7 @@ private:
 
 	Edge edges[2][MAZE_ROWS + 1][MAZE_COLS + 1] = { }; // edges[horizontal][row][column]
 	std::vector<std::tuple<bool, Point>> solution;
+	bool finished;
 
 	void UpdateVisitedEdges();
 	void UpdateWalls();
@@ -34,6 +35,6 @@ public:
 	~Solver();
 
 	void Reset();
-	Point Step();
+	bool Step();
 	void Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_font);
 };

@@ -148,6 +148,21 @@ bool SimilarDirections(Direction d1, Direction d2) {
 		|| (d1 == DIR_DOWN_RIGHT && d2 == DIR_RIGHT_DOWN) || (d2 == DIR_DOWN_RIGHT && d1 == DIR_RIGHT_DOWN);
 }
 
+Point DirToCell(Point coord, Direction dir) {
+	switch (NormalizeDir(dir)) {
+	case DIR_UP:
+		return coord + Point(0, -1);
+	case DIR_LEFT:
+		return coord + Point(-1, 0);
+	case DIR_DOWN:
+	case DIR_RIGHT:
+		return coord;
+	default:
+		ConsoleError("Direction is Invalid!");
+		return coord;
+	}
+}
+
 std::string DirToStr(Direction dir) {
 	switch (dir) {
 	case DIR_UP:

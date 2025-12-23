@@ -38,6 +38,7 @@ bool show_full_map = true;
 float solver_step_interval = 0.90f;
 float step_timer = 1.0f;
 bool panning_view = false;
+bool showing_paths = false;
 Font roboto;
 
 // Core entities
@@ -180,13 +181,9 @@ void SolvingMaze_Update() {
 		step_timer = 1.0f - solver_step_interval;
 
 		// Calculate the next step and move
-		// if (solver.Step()) {
-		// 	if (solver.target_coords[0] != solver.starting_coord) {
-		// 		// When the goal is reached, set the destination back to the starting coord
-		// 		solver.target_coords = { solver.starting_coord };
-		// 		step_timer = 1.0f;
-		// 	}
-		// }
+		if (!showing_paths && solver.Step()) {
+			showing_paths = true;
+		}
 	}
 }
 
@@ -217,6 +214,7 @@ void DrawUI() {
 		solver.Reset();
 		maze_is_editable = false;
 		step_timer = 0.5f;
+		showing_paths = false;
 		state = SOLVING_MAZE;
 	}
 	if (state == SOLVING_MAZE) {
@@ -227,10 +225,10 @@ void DrawUI() {
 		GuiCheckBox(ui_layout_recs[8], "Show Full Map", &show_full_map);
 		GuiSlider(ui_layout_recs[9], "SLOW", "FAST", &solver_step_interval, 0.1f, 1.0f);
 		if (GuiButton(ui_layout_recs[10], "SKIP ANIMATION")) {
-			// while (!showing_paths) {
-			// 	step_timer = 0.0f;
-			// 	SolvingMaze_Update();
-			// }
+			while (!showing_paths) {
+				step_timer = 0.0f;
+				SolvingMaze_Update();
+			}
 		}
 	}
 	ConsoleDraw(ui_layout_recs[11]);
