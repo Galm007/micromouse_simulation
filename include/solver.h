@@ -1,9 +1,10 @@
 #pragma once
 
+#include <tuple>
+
 #include "maze.h"
 #include "point.h"
 #include "direction.h"
-#include <tuple>
 
 struct Edge {
 	bool visited = false;

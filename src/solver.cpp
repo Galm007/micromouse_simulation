@@ -1,17 +1,14 @@
 #include <algorithm>
 #include <cstdio>
-#include <cstring>
 #include <iostream>
 #include <raylib.h>
 #include <raygui.h>
 #include <queue>
-#include <stack>
 #include <string>
 #include <tuple>
 
 #include "solver.h"
 #include "direction.h"
-#include "console.h"
 
 #define FOREACH_EDGE(code) \
 	for (int row = 0; row <= MAZE_ROWS; row++) {\
@@ -152,7 +149,7 @@ void Solver::UpdateSolution() {
 		GetEdgesOfCell(horizontals, edge_coords, target_coords[i]);
 		for (int i = 0; i < 4; i++) {
 			Edge new_edge = edges[horizontals[i]][edge_coords[i].y][edge_coords[i].x];
-			if (new_edge.ff_val > 0.0f && new_edge.ff_val < edge.ff_val) {
+			if (new_edge.ff_val >= 0.0f && new_edge.ff_val < edge.ff_val) {
 				edge_coord = edge_coords[i];
 				horizontal = horizontals[i];
 				edge = new_edge;
@@ -218,53 +215,54 @@ Solver::~Solver() {
 // Reset the conditions to where the solver does not know anything about the maze
 void Solver::Reset() {
 	coord = starting_coord;
-	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
 	known_maze.Clear();
-	finished = false;
 
 	FOREACH_EDGE(edges[horizontal][row][col].visited = false;);
+	FOREACH_EDGE(
+		edges[horizontal][row][col].visited = false;
+		edges[horizontal][row][col].ff_val = -1.0f;
+		edges[horizontal][row][col].dir = DIR_UNKNOWN;
+		edges[horizontal][row][col].same_dir = 0;
+	);
+
+	solution = { };
+	finished = false;
+	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
+
 	UpdateVisitedEdges();
 	UpdateWalls();
 	Floodfill(false);
 	UpdateSolution();
 }
 
-// bool Solver::IsInTarget(Point coordinate) {
-// 	return std::find(target_coords.begin(), target_coords.end(), coordinate) != target_coords.end();
-// }
-
 bool Solver::Step() {
 	bool horizontal = std::get<0>(solution.back());
 	Point edge_coord = std::get<1>(solution.back());
 	solution.pop_back();
 
-	// If a wall blocks the way, recalculate path
-	if (known_maze.WallAt(horizontal, edge_coord)) {
-		Floodfill(false);
-		UpdateSolution();
-
-		horizontal = std::get<0>(solution.back());
-		edge_coord = std::get<1>(solution.back());
-		solution.pop_back();
-	}
-
 	// Move and update known walls
 	Edge edge = edges[horizontal][edge_coord.y][edge_coord.x];
 	coord = DirToCell(edge_coord, edge.dir);
-	UpdateVisitedEdges();
-	UpdateWalls();
 
-	if (solution.size() == 0) {
-		if (target_coords[0] != starting_coord) {
-			// Go back to starting position once goal is found
-			target_coords = { starting_coord };
-			Floodfill(false);
-			UpdateSolution();
-		} else {
-			finished = true;
-			return true;
+	auto it = std::find(target_coords.begin(), target_coords.end(), coord);
+	if (it != target_coords.end()) {
+		target_coords.erase(it);
+
+		if (target_coords.size() == 0) {
+			if (coord == starting_coord) {
+				finished = true;
+				return true;
+			} else {
+				// Go back to starting position once goal is found
+				target_coords = { starting_coord };
+			}
 		}
 	}
+
+	UpdateVisitedEdges();
+	UpdateWalls();
+	Floodfill(false);
+	UpdateSolution();
 
 	return false;
 }
