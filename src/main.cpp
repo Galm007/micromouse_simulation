@@ -38,7 +38,6 @@ bool show_full_map = true;
 float solver_step_interval = 0.90f;
 float step_timer = 1.0f;
 bool panning_view = false;
-std::vector<ray::Vector2> path;
 Font roboto;
 
 // Core entities
@@ -216,7 +215,6 @@ void DrawUI() {
 	}
 	if (!maze_is_editable && GuiButton(ui_layout_recs[5], "RUN SOLVER")) {
 		solver.Reset();
-		path = solver.GetPath();
 		maze_is_editable = false;
 		step_timer = 0.5f;
 		state = SOLVING_MAZE;
@@ -354,14 +352,6 @@ int main(int argc, char** argv) {
 		// Draw the solver on top of the maze
 		if (state == SOLVING_MAZE) {
 			solver.Draw(maze.position, show_floodfill_vals, roboto);
-
-			// Draw the solution
-			Vector2 from = path[0];
-			for (int i = 1; i < path.size(); i++) {
-				DrawLineEx(from, path[i], 2.0f, PURPLE);
-				DrawCircleLinesV(path[i], 5.0f, PURPLE);
-				from = path[i];
-			}
 		}
 
 		mouse.Draw();

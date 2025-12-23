@@ -18,9 +18,12 @@ private:
 	Maze* maze;
 
 	Edge edges[2][MAZE_ROWS + 1][MAZE_COLS + 1] = { }; // edges[horizontal][row][column]
+	std::vector<Direction> solution;
 
 	void UpdateVisitedEdges();
 	void UpdateWalls();
+	void Floodfill(bool visited_edges_only);
+	void UpdateSolution();
 
 public:
 	std::vector<Point> target_coords;
@@ -30,10 +33,6 @@ public:
 	~Solver();
 
 	void Reset();
-	void Floodfill(bool visited_edges_only);
-	int Step();
-
-	std::vector<ray::Vector2> GetPath();
-
+	Point Step();
 	void Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_font);
 };
