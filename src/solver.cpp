@@ -78,7 +78,7 @@ void Solver::Floodfill(bool visited_edges_only) {
 	for (int i = 0; i < 4; i++) {
 		bool h = horizontals[i];
 		Point e = edge_coords[i];
-		if (!maze->WallAt(h, e)) {
+		if (!known_maze.WallAt(h, e)) {
 			edges[h][e.y][e.x].ff_val = 0.0f;
 			edges[h][e.y][e.x].dir = (Direction)(1 + 3 * i);
 			q.push(std::make_tuple(h, e));
@@ -90,36 +90,50 @@ void Solver::Floodfill(bool visited_edges_only) {
 		Point edge_coord = std::get<1>(q.front());
 		q.pop();
 
-		Edge edge = edges[horizontal][edge_coord.y][edge_coord.x];
-		Direction normalized_dir = NormalizeDir(edge.dir);
+		// Prioritize making edges that share a common direction
+		int common_test_dir_i = 0;
+		while (common_test_dir_i != -1) {
+			common_test_dir_i = -1;
 
-		// Find the other 3 edges of the cell to evaluate, based on the direction
-		GetNextPossibleEdges(horizontals, edge_coords, normalized_dir);
-		for (int i = 0; i < 3; i++) {
-			Direction new_dir = (Direction)(normalized_dir + i);
-			Point new_coord = edge_coord + edge_coords[i];
-			Edge& new_edge = edges[horizontals[i]][new_coord.y][new_coord.x];
+			Edge edge = edges[horizontal][edge_coord.y][edge_coord.x];
+			Direction normalized_dir = NormalizeDir(edge.dir);
 
-			bool within_bounds = (normalized_dir == DIR_UP && new_coord.y >= 0)
-				|| (normalized_dir == DIR_DOWN && new_coord.y < MAZE_ROWS)
-				|| (normalized_dir == DIR_LEFT && new_coord.x >= 0)
-				|| (normalized_dir == DIR_RIGHT && new_coord.x < MAZE_COLS);
+			// Find the other 3 edges of the cell to evaluate, based on the direction
+			GetNextPossibleEdges(horizontals, edge_coords, normalized_dir);
+			for (int i = 0; i < 3; i++) {
+				Direction new_dir = (Direction)(normalized_dir + i);
+				Point new_coord = edge_coord + edge_coords[i];
+				Edge& new_edge = edges[horizontals[i]][new_coord.y][new_coord.x];
 
-			if (within_bounds
-				&& (!visited_edges_only || (visited_edges_only && new_edge.visited))
-				&& !maze->WallAt(horizontals[i], new_coord)
-				&& new_edge.ff_val < 0.0f) {
-				// Set edge values and push it to queue
-				new_edge.ff_val = edge.ff_val + (new_dir == normalized_dir ? 1.0f : 0.71f);
-				new_edge.dir = new_dir;
-				q.push(std::make_tuple(horizontals[i], new_coord));
+				bool within_bounds = (normalized_dir == DIR_UP && new_coord.y >= 0)
+					|| (normalized_dir == DIR_DOWN && new_coord.y < MAZE_ROWS)
+					|| (normalized_dir == DIR_LEFT && new_coord.x >= 0)
+					|| (normalized_dir == DIR_RIGHT && new_coord.x < MAZE_COLS);
 
-				// Keep track of edges that share a common direction
-				if (SimilarDirections(new_edge.dir, edge.dir)) {
-					new_edge.same_dir = edge.same_dir + 1;
+				if (within_bounds
+					&& (!visited_edges_only || (visited_edges_only && new_edge.visited))
+					&& !known_maze.WallAt(horizontals[i], new_coord)
+					&& new_edge.ff_val < 0.0f) {
+					// Set edge values and push it to queue
+					new_edge.ff_val = edge.ff_val + (new_dir == normalized_dir ? 1.0f : 0.71f);
+					new_edge.dir = new_dir;
+					q.push(std::make_tuple(horizontals[i], new_coord));
+
+					// Keep track of edges that share a common direction
+					if (SimilarDirections(new_edge.dir, edge.dir)) {
+						new_edge.same_dir = edge.same_dir + 1;
+						common_test_dir_i = i;
+					}
 				}
 			}
+
+			if (common_test_dir_i != -1) {
+				// Continue going in the same shared common direction
+				edge_coord += edge_coords[common_test_dir_i];
+				horizontal = horizontals[common_test_dir_i];
+			}
 		}
+		
 	}
 }
 
@@ -145,7 +159,6 @@ void Solver::UpdateSolution() {
 			}
 		}
 	}
-	std::cout << edge.ff_val << std::endl;
 
 	// Keep going until there are no more edges to go to
 	bool moved = true;
