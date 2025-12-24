@@ -7,7 +7,6 @@
 #include "direction.h"
 
 struct Edge {
-	bool visited = false;
 	Direction dir = DIR_UNKNOWN;
 	float ff_val = -1.0f;
 	int same_dir = 0;
@@ -20,6 +19,7 @@ private:
 	Maze* maze;
 
 	Edge edges[2][MAZE_ROWS + 1][MAZE_COLS + 1] = { }; // edges[horizontal][row][column]
+	bool visited_coords[MAZE_ROWS][MAZE_COLS] = { false };
 	std::vector<std::tuple<bool, Point>> solution;
 	bool finished;
 

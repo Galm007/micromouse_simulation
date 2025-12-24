@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <raylib.h>
 #include <raygui.h>
 #include <queue>
@@ -35,10 +36,7 @@ void GetEdgesOfCell(bool dest_horizontals[4], Point dest_edge_coords[4], Point c
 
 // Update which edges have been visited based on current location
 void Solver::UpdateVisitedEdges() {
-	edges[true][coord.y][coord.x].visited = true;
-	edges[true][coord.y + 1][coord.x].visited = true;
-	edges[false][coord.y][coord.x].visited = true;
-	edges[false][coord.y][coord.x + 1].visited = true;
+	visited_coords[coord.y][coord.x] = true;
 }
 
 // Update knowledge about existing walls based on current location
@@ -107,7 +105,7 @@ void Solver::Floodfill(bool visited_edges_only) {
 					|| (normalized_dir == DIR_RIGHT && new_coord.x < MAZE_COLS);
 
 				if (within_bounds
-					&& (!visited_edges_only || (visited_edges_only && new_edge.visited))
+					&& (!visited_edges_only || (visited_edges_only && visited_coords[new_coord.y][new_coord.x]))
 					&& !known_maze.WallAt(horizontals[i], new_coord)
 					&& new_edge.ff_val < 0.0f) {
 					// Set edge values and push it to queue
@@ -216,8 +214,8 @@ void Solver::Reset() {
 	coord = starting_coord;
 	known_maze.Clear();
 
+	memset(visited_coords, 0, sizeof(visited_coords));
 	FOREACH_EDGE(
-		edges[horizontal][row][col].visited = false;
 		edges[horizontal][row][col].ff_val = -1.0f;
 		edges[horizontal][row][col].dir = DIR_UNKNOWN;
 		edges[horizontal][row][col].same_dir = 0;
