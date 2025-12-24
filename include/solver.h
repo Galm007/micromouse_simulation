@@ -7,7 +7,7 @@
 #include "direction.h"
 
 struct Edge {
-	bool visited = false;
+	bool visited = false; // NOTE: Maybe it is coords that have to be visited, not edges
 	Direction dir = DIR_UNKNOWN;
 	float ff_val = -1.0f;
 	int same_dir = 0;
@@ -37,6 +37,8 @@ public:
 	~Solver();
 
 	void Reset();
-	bool Step();
+	void SoftReset();
+	void Step();
+	bool IsFinished();
 	void Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_font);
 };

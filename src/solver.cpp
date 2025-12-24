@@ -216,7 +216,6 @@ void Solver::Reset() {
 	coord = starting_coord;
 	known_maze.Clear();
 
-	FOREACH_EDGE(edges[horizontal][row][col].visited = false;);
 	FOREACH_EDGE(
 		edges[horizontal][row][col].visited = false;
 		edges[horizontal][row][col].ff_val = -1.0f;
@@ -224,7 +223,11 @@ void Solver::Reset() {
 		edges[horizontal][row][col].same_dir = 0;
 	);
 
-	solution = { };
+	SoftReset();
+}
+
+// Get ready for another run, without clearing the solver's knowledge of the maze
+void Solver::SoftReset() {
 	finished = false;
 	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
 
@@ -234,11 +237,7 @@ void Solver::Reset() {
 	UpdateSolution();
 }
 
-bool Solver::Step() {
-	if (finished) {
-		return true;
-	}
-
+void Solver::Step() {
 	bool horizontal = std::get<0>(solution.back());
 	Point edge_coord = std::get<1>(solution.back());
 	solution.pop_back();
@@ -266,7 +265,9 @@ bool Solver::Step() {
 	UpdateWalls();
 	Floodfill(false);
 	UpdateSolution();
+}
 
+bool Solver::IsFinished() {
 	return finished;
 }
 

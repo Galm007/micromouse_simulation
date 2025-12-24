@@ -175,7 +175,7 @@ void FileDialogLogic() {
 }
 
 void SolvingMaze_Update() {
-	if ((step_timer -= GetFrameTime()) <= 0.0f) {
+	if (!solver.IsFinished() && (step_timer -= GetFrameTime()) <= 0.0f) {
 		step_timer = 1.0f - solver_step_interval;
 		solver.Step();
 	}
@@ -204,12 +204,22 @@ void DrawUI() {
 			maze.Clear();
 		}
 	}
-	if (!maze_is_editable && GuiButton(ui_layout_recs[5], "RUN SOLVER")) {
-		solver.Reset();
-		maze_is_editable = false;
-		step_timer = 0.5f;
-		state = SOLVING_MAZE;
+	if (state == SOLVING_MAZE && !solver.IsFinished()) {
+		GuiSetState(STATE_DISABLED);
 	}
+	if (!maze_is_editable && GuiButton(ui_layout_recs[5], "RUN SOLVER")) {
+		if (state == SOLVING_MAZE) {
+			if (solver.IsFinished()) {
+				solver.SoftReset();
+			}
+		} else {
+			solver.Reset();
+			maze_is_editable = false;
+			step_timer = 0.5f;
+			state = SOLVING_MAZE;
+		}
+	}
+	GuiSetState(STATE_NORMAL);
 	if (state == SOLVING_MAZE) {
 		if (GuiButton(ui_layout_recs[6], "STOP SOLVER")) {
 			state = IDLE;
@@ -218,7 +228,9 @@ void DrawUI() {
 		GuiCheckBox(ui_layout_recs[8], "Show Full Map", &show_full_map);
 		GuiSlider(ui_layout_recs[9], "SLOW", "FAST", &solver_step_interval, 0.1f, 1.0f);
 		if (GuiButton(ui_layout_recs[10], "SKIP ANIMATION")) {
-			while (!solver.Step());
+			while (!solver.IsFinished()) {
+				solver.Step();
+			}
 		}
 	}
 	ConsoleDraw(ui_layout_recs[11]);
