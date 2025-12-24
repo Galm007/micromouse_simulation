@@ -27,6 +27,7 @@ private:
 	void UpdateWalls();
 	void Floodfill(bool visited_edges_only);
 	void UpdateSolution();
+	void DrawSolution(Color clr);
 
 public:
 	std::vector<Point> target_coords;

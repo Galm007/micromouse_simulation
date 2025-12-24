@@ -251,7 +251,7 @@ bool Solver::Step() {
 		if (target_coords.size() == 0) {
 			if (coord == starting_coord) {
 				finished = true;
-				return true;
+				target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
 			} else {
 				// Go back to starting position once goal is found
 				target_coords = { starting_coord };
@@ -264,7 +264,22 @@ bool Solver::Step() {
 	Floodfill(false);
 	UpdateSolution();
 
-	return false;
+	return finished;
+}
+
+void Solver::DrawSolution(Color clr) {
+	ray::Vector2 from = maze->CellToPos(coord);
+	for (int i = solution.size() - 1; i >= 0; i--) {
+		bool horizontal = std::get<0>(solution[i]);
+		Point edge_coord = std::get<1>(solution[i]);
+		ray::Vector2 to = maze->CornerToPos(edge_coord) + (horizontal
+			? ray::Vector2(MAZE_CELL_SIZE / 2.0f, 0.0f)
+			: ray::Vector2(0.0f, MAZE_CELL_SIZE / 2.0f));
+
+		DrawLineEx(from, to, 2.0f, clr);
+		DrawCircleLinesV(to, 5.0f, clr);
+		from = to;
+	}
 }
 
 void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_font) {
@@ -291,42 +306,19 @@ void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_fon
 		);
 	}
 
-	// Show path
 	if (finished) {
-		target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
+		// Solution
 		Floodfill(true);
 		UpdateSolution();
-	}
-	ray::Vector2 from = maze->CellToPos(coord);
-	for (int i = solution.size() - 1; i >= 0; i--) {
-		bool horizontal = std::get<0>(solution[i]);
-		Point edge_coord = std::get<1>(solution[i]);
-		ray::Vector2 to = maze->CornerToPos(edge_coord) + (horizontal
-			? ray::Vector2(MAZE_CELL_SIZE / 2.0f, 0.0f)
-			: ray::Vector2(0.0f, MAZE_CELL_SIZE / 2.0f));
+		DrawSolution(PURPLE);
 
-		DrawLineEx(from, to, 2.0f, PURPLE);
-		DrawCircleLinesV(to, 5.0f, PURPLE);
-		from = to;
-	}
-
-	// Show alternative path
-	if (finished) {
+		// Alternative solution
 		Floodfill(false);
 		UpdateSolution();
-
-		from = maze->CellToPos(coord);
-		for (int i = solution.size() - 1; i >= 0; i--) {
-			bool horizontal = std::get<0>(solution[i]);
-			Point edge_coord = std::get<1>(solution[i]);
-			ray::Vector2 to = maze->CornerToPos(edge_coord) + (horizontal
-				? ray::Vector2(MAZE_CELL_SIZE / 2.0f, 0.0f)
-				: ray::Vector2(0.0f, MAZE_CELL_SIZE / 2.0f));
-
-			DrawLineEx(from, to, 2.0f, BLACK);
-			DrawCircleLinesV(to, 5.0f, BLACK);
-			from = to;
-		}
+		DrawSolution(BLACK);
+	} else {
+		// Current path
+		DrawSolution(PURPLE);
 	}
 
 	// Show manhattan distance of each cell from the goal
