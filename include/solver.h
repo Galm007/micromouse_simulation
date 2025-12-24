@@ -20,14 +20,13 @@ private:
 
 	Edge edges[2][MAZE_ROWS + 1][MAZE_COLS + 1] = { }; // edges[horizontal][row][column]
 	bool visited_coords[MAZE_ROWS][MAZE_COLS] = { false };
-	std::vector<std::tuple<bool, Point>> solution;
+	std::vector<std::tuple<bool, Point>> path;
 	bool finished;
 
-	void UpdateVisitedEdges();
-	void UpdateWalls();
+	void UpdateVisited();
 	void Floodfill(bool visited_edges_only);
-	void UpdateSolution();
-	void DrawSolution(Color clr);
+	void UpdatePath();
+	void DrawPath(Color clr);
 
 public:
 	std::vector<Point> target_coords;

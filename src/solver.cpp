@@ -34,13 +34,10 @@ void GetEdgesOfCell(bool dest_horizontals[4], Point dest_edge_coords[4], Point c
 	dest_edge_coords[3] = coordinate + Point(1, 0);
 }
 
-// Update which edges have been visited based on current location
-void Solver::UpdateVisitedEdges() {
-	visited_coords[coord.y][coord.x] = true;
-}
-
 // Update knowledge about existing walls based on current location
-void Solver::UpdateWalls() {
+void Solver::UpdateVisited() {
+	visited_coords[coord.y][coord.x] = true;
+
 	if (maze->WallAt(true, coord)) {
 		known_maze.SetWalls(coord, coord + Point(1, 0), true);
 	}
@@ -127,12 +124,13 @@ void Solver::Floodfill(bool visited_edges_only) {
 				horizontal = horizontals[common_test_dir_i];
 			}
 		}
-		
 	}
+
+	UpdatePath();
 }
 
-void Solver::UpdateSolution() {
-	solution = { };
+void Solver::UpdatePath() {
+	path = { };
 
 	Point edge_coord;
 	bool horizontal;
@@ -160,7 +158,7 @@ void Solver::UpdateSolution() {
 		moved = false;
 
 		// Add to path
-		solution.push_back(std::make_tuple(horizontal, edge_coord));
+		path.push_back(std::make_tuple(horizontal, edge_coord));
 
 		// Find the other 3 edges of the cell to test
 		Direction normalized_dir = ReverseDir(NormalizeDir(edge.dir));
@@ -211,9 +209,7 @@ Solver::~Solver() {
 
 // Reset the conditions to where the solver does not know anything about the maze
 void Solver::Reset() {
-	coord = starting_coord;
 	known_maze.Clear();
-
 	memset(visited_coords, 0, sizeof(visited_coords));
 	FOREACH_EDGE(
 		edges[horizontal][row][col].ff_val = -1.0f;
@@ -226,36 +222,32 @@ void Solver::Reset() {
 
 // Get ready for another run, without clearing the solver's knowledge of the maze
 void Solver::SoftReset() {
-	finished = false;
+	coord = starting_coord;
 	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
+	finished = false;
 
-	UpdateVisitedEdges();
-	UpdateWalls();
+	UpdateVisited();
 	Floodfill(false);
-	UpdateSolution();
 }
 
 void Solver::Step() {
-	bool horizontal = std::get<0>(solution.back());
-	Point edge_coord = std::get<1>(solution.back());
-	solution.pop_back();
+	bool horizontal = std::get<0>(path.back());
+	Point edge_coord = std::get<1>(path.back());
+	path.pop_back();
 
 	if (maze->WallAt(horizontal, edge_coord)) {
-		UpdateVisitedEdges();
-		UpdateWalls();
+		UpdateVisited();
 		Floodfill(false);
-		UpdateSolution();
 
-		horizontal = std::get<0>(solution.back());
-		edge_coord = std::get<1>(solution.back());
-		solution.pop_back();
+		horizontal = std::get<0>(path.back());
+		edge_coord = std::get<1>(path.back());
+		path.pop_back();
 	}
 
 	// Move and update known walls
 	Edge edge = edges[horizontal][edge_coord.y][edge_coord.x];
 	coord = DirToCell(edge_coord, edge.dir);
-	UpdateVisitedEdges();
-	UpdateWalls();
+	UpdateVisited();
 
 	auto it = std::find(target_coords.begin(), target_coords.end(), coord);
 	if (it != target_coords.end()) {
@@ -272,7 +264,6 @@ void Solver::Step() {
 		}
 
 		Floodfill(false);
-		UpdateSolution();
 	}
 }
 
@@ -280,11 +271,11 @@ bool Solver::IsFinished() {
 	return finished;
 }
 
-void Solver::DrawSolution(Color clr) {
+void Solver::DrawPath(Color clr) {
 	ray::Vector2 from = maze->CellToPos(coord);
-	for (int i = solution.size() - 1; i >= 0; i--) {
-		bool horizontal = std::get<0>(solution[i]);
-		Point edge_coord = std::get<1>(solution[i]);
+	for (int i = path.size() - 1; i >= 0; i--) {
+		bool horizontal = std::get<0>(path[i]);
+		Point edge_coord = std::get<1>(path[i]);
 		ray::Vector2 to = maze->CornerToPos(edge_coord) + (horizontal
 			? ray::Vector2(MAZE_CELL_SIZE / 2.0f, 0.0f)
 			: ray::Vector2(0.0f, MAZE_CELL_SIZE / 2.0f));
@@ -322,16 +313,14 @@ void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_fon
 	if (finished) {
 		// Solution
 		Floodfill(true);
-		UpdateSolution();
-		DrawSolution(PURPLE);
+		DrawPath(PURPLE);
 
 		// Alternative solution
 		Floodfill(false);
-		UpdateSolution();
-		DrawSolution(BLACK);
+		DrawPath(BLACK);
 	} else {
 		// Current path
-		DrawSolution(PURPLE);
+		DrawPath(PURPLE);
 	}
 
 	// Show manhattan distance of each cell from the goal
