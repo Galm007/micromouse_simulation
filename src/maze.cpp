@@ -72,12 +72,9 @@ void Maze::SetWalls(Point from_corner, Point to_corner, bool state) {
 	}
 }
 
-bool Maze::HWallAt(Point corner) {
-	return horizontal_walls[corner.y][corner.x];
-}
-
-bool Maze::VWallAt(Point corner) {
-	return vertical_walls[corner.y][corner.x];
+bool Maze::WallAt(bool horizontal, Point coord) {
+	return (horizontal && horizontal_walls[coord.y][coord.x])
+		|| (!horizontal && vertical_walls[coord.y][coord.x]);
 }
 
 // Set all walls other than edge walls to false 

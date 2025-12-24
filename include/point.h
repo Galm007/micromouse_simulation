@@ -10,6 +10,7 @@ public:
 
 	Point(int x, int y);
 	Point(int a);
+	Point();
 	~Point();
 
 	ray::Vector2 ToVec2();
