@@ -256,7 +256,7 @@ int main(int argc, char** argv) {
 	file_dialog_state.saveFileMode = true;
 
 	// Load Roboto font
-	roboto = LoadFont("static/Roboto-Regular.ttf");
+	roboto = LoadFont("../resources/Roboto-Regular.ttf");
 
 	while (!window.ShouldClose()) {
 		// Update logic
