@@ -7,7 +7,7 @@
 #include "direction.h"
 
 struct Edge {
-	bool visited = false; // NOTE: Maybe it is coords that have to be visited, not edges
+	bool visited = false;
 	Direction dir = DIR_UNKNOWN;
 	float ff_val = -1.0f;
 	int same_dir = 0;

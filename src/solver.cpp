@@ -242,9 +242,22 @@ void Solver::Step() {
 	Point edge_coord = std::get<1>(solution.back());
 	solution.pop_back();
 
+	if (maze->WallAt(horizontal, edge_coord)) {
+		UpdateVisitedEdges();
+		UpdateWalls();
+		Floodfill(false);
+		UpdateSolution();
+
+		horizontal = std::get<0>(solution.back());
+		edge_coord = std::get<1>(solution.back());
+		solution.pop_back();
+	}
+
 	// Move and update known walls
 	Edge edge = edges[horizontal][edge_coord.y][edge_coord.x];
 	coord = DirToCell(edge_coord, edge.dir);
+	UpdateVisitedEdges();
+	UpdateWalls();
 
 	auto it = std::find(target_coords.begin(), target_coords.end(), coord);
 	if (it != target_coords.end()) {
@@ -259,12 +272,10 @@ void Solver::Step() {
 				target_coords = { starting_coord };
 			}
 		}
-	}
 
-	UpdateVisitedEdges();
-	UpdateWalls();
-	Floodfill(false);
-	UpdateSolution();
+		Floodfill(false);
+		UpdateSolution();
+	}
 }
 
 bool Solver::IsFinished() {
