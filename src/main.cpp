@@ -30,15 +30,13 @@ enum ApplicationState {
 // Miscellaneous variables
 ApplicationState state = IDLE;
 std::string maze_filename;
-Point closest_corner_to_mouse = Point(0);
-Point edit_wall_from = Point(0);
+Point closest_corner_to_mouse = Point(0, 0);
+Point edit_wall_from = Point(0, 0);
 bool maze_is_editable = false;
 bool show_floodfill_vals = false;
 bool show_full_map = true;
 float solver_step_interval = 0.70f;
-float step_timer = 1.0f;
-bool panning_view = false;
-bool showing_paths = false;
+float step_timer = 0.0f;
 Font roboto;
 
 // Core entities
@@ -179,11 +177,7 @@ void FileDialogLogic() {
 void SolvingMaze_Update() {
 	if ((step_timer -= GetFrameTime()) <= 0.0f) {
 		step_timer = 1.0f - solver_step_interval;
-
-		// Calculate the next step and move
-		if (!showing_paths && solver.Step()) {
-			showing_paths = true;
-		}
+		solver.Step();
 	}
 }
 
@@ -214,7 +208,6 @@ void DrawUI() {
 		solver.Reset();
 		maze_is_editable = false;
 		step_timer = 0.5f;
-		showing_paths = false;
 		state = SOLVING_MAZE;
 	}
 	if (state == SOLVING_MAZE) {
@@ -225,10 +218,7 @@ void DrawUI() {
 		GuiCheckBox(ui_layout_recs[8], "Show Full Map", &show_full_map);
 		GuiSlider(ui_layout_recs[9], "SLOW", "FAST", &solver_step_interval, 0.1f, 1.0f);
 		if (GuiButton(ui_layout_recs[10], "SKIP ANIMATION")) {
-			while (!showing_paths) {
-				step_timer = 0.0f;
-				SolvingMaze_Update();
-			}
+			while (!solver.Step());
 		}
 	}
 	ConsoleDraw(ui_layout_recs[11]);

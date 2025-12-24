@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cstdio>
-#include <iostream>
 #include <raylib.h>
 #include <raygui.h>
 #include <queue>
@@ -236,6 +235,10 @@ void Solver::Reset() {
 }
 
 bool Solver::Step() {
+	if (finished) {
+		return true;
+	}
+
 	bool horizontal = std::get<0>(solution.back());
 	Point edge_coord = std::get<1>(solution.back());
 	solution.pop_back();
