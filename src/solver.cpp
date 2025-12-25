@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cstdio>
-#include <cstring>
 #include <raylib.h>
 #include <raygui.h>
 #include <queue>
@@ -36,7 +35,10 @@ void GetEdgesOfCell(bool dest_horizontals[4], Point dest_edge_coords[4], Point c
 
 // Update knowledge about existing walls based on current location
 void Solver::UpdateVisited() {
-	visited_coords[coord.y][coord.x] = true;
+	edges[true][coord.y][coord.x].visited = true;
+	edges[true][coord.y + 1][coord.x].visited = true;
+	edges[false][coord.y][coord.x].visited = true;
+	edges[false][coord.y][coord.x + 1].visited = true;
 
 	if (maze->WallAt(true, coord)) {
 		known_maze.SetWalls(coord, coord + Point(1, 0), true);
@@ -102,7 +104,7 @@ void Solver::Floodfill(bool visited_edges_only) {
 					|| (normalized_dir == DIR_RIGHT && new_coord.x < MAZE_COLS);
 
 				if (within_bounds
-					&& (!visited_edges_only || (visited_edges_only && visited_coords[new_coord.y][new_coord.x]))
+					&& (!visited_edges_only || (visited_edges_only && new_edge.visited))
 					&& !known_maze.WallAt(horizontals[i], new_coord)
 					&& new_edge.ff_val < 0.0f) {
 					// Set edge values and push it to queue
@@ -196,6 +198,31 @@ void Solver::UpdatePath() {
 	}
 }
 
+// Get the necessary coordinates to visit to validate a potentially better solution path
+std::vector<Point> Solver::GetUnvisitedPathCoords() {
+	std::vector<Point> unvisited_coords = { };
+
+	Point tmp_coord = coord;
+	std::vector<Point> tmp_target_coords = target_coords;
+
+	coord = starting_coord;
+	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
+	Floodfill(false);
+	for (int i = 0; i < path.size(); i++) {
+		bool horizontal = std::get<0>(path[i]);
+		Point edge_coord = std::get<1>(path[i]);
+		if (!edges[horizontal][edge_coord.y][edge_coord.x].visited) {
+			unvisited_coords.push_back(edge_coord);
+			unvisited_coords.push_back(edge_coord - (horizontal ? Point(0, 1) : Point(1, 0)));
+		}
+	}
+
+	coord = tmp_coord;
+	target_coords = tmp_target_coords;
+
+	return unvisited_coords;
+}
+
 Solver::Solver(Maze* maze, Point starting_coord) {
 	this->known_maze.position = maze->position;
 	this->maze = maze;
@@ -210,8 +237,8 @@ Solver::~Solver() {
 // Reset the conditions to where the solver does not know anything about the maze
 void Solver::Reset() {
 	known_maze.Clear();
-	memset(visited_coords, 0, sizeof(visited_coords));
 	FOREACH_EDGE(
+		edges[horizontal][row][col].visited = false;
 		edges[horizontal][row][col].ff_val = -1.0f;
 		edges[horizontal][row][col].dir = DIR_UNKNOWN;
 		edges[horizontal][row][col].same_dir = 0;
@@ -225,6 +252,7 @@ void Solver::SoftReset() {
 	coord = starting_coord;
 	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
 	finished = false;
+	going_back = false;
 
 	UpdateVisited();
 	Floodfill(false);
@@ -237,6 +265,9 @@ void Solver::Step() {
 
 	if (maze->WallAt(horizontal, edge_coord)) {
 		UpdateVisited();
+		if (going_back) {
+			target_coords = GetUnvisitedPathCoords();
+		}
 		Floodfill(false);
 
 		horizontal = std::get<0>(path.back());
@@ -253,12 +284,19 @@ void Solver::Step() {
 	if (it != target_coords.end()) {
 		target_coords.erase(it);
 
+		if (going_back) {
+			target_coords = GetUnvisitedPathCoords();
+		}
+
 		if (target_coords.size() == 0) {
 			if (coord == starting_coord) {
 				finished = true;
 				target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
+			} else if (!going_back) {
+				// Explore a potentially better path before going back
+				going_back = true;
+				target_coords = GetUnvisitedPathCoords();
 			} else {
-				// Go back to starting position once goal is found
 				target_coords = { starting_coord };
 			}
 		}
@@ -280,8 +318,7 @@ void Solver::DrawPath(Color clr) {
 			? ray::Vector2(MAZE_CELL_SIZE / 2.0f, 0.0f)
 			: ray::Vector2(0.0f, MAZE_CELL_SIZE / 2.0f));
 
-		DrawLineEx(from, to, 2.0f, clr);
-		DrawCircleLinesV(to, 5.0f, clr);
+		DrawLineEx(from, to, 3.0f, clr);
 		from = to;
 	}
 }
@@ -313,14 +350,19 @@ void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_fon
 	if (finished) {
 		// Solution
 		Floodfill(true);
-		DrawPath(PURPLE);
+		DrawPath(DARKBLUE);
 
 		// Alternative solution
 		Floodfill(false);
 		DrawPath(BLACK);
 	} else {
 		// Current path
-		DrawPath(PURPLE);
+		DrawPath(DARKBLUE);
+	}
+
+	// Show unvisited coords of a potentially better path
+	for (Point target : target_coords) {
+		DrawCircleLinesV(maze->CellToPos(target), MAZE_CELL_SIZE * 0.4f, BLACK);
 	}
 
 	// Show manhattan distance of each cell from the goal
