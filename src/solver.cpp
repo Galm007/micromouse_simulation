@@ -213,12 +213,16 @@ std::vector<Point> Solver::GetUnvisitedPathCoords() {
 		Point edge_coord = std::get<1>(path[i]);
 		if (!edges[horizontal][edge_coord.y][edge_coord.x].visited) {
 			unvisited_coords.push_back(edge_coord);
-			unvisited_coords.push_back(edge_coord - (horizontal ? Point(0, 1) : Point(1, 0)));
+			// unvisited_coords.push_back(edge_coord - (horizontal ? Point(0, 1) : Point(1, 0)));
 		}
 	}
 
 	coord = tmp_coord;
 	target_coords = tmp_target_coords;
+
+	if (unvisited_coords.size() == 0) {
+		unvisited_coords = { starting_coord };
+	}
 
 	return unvisited_coords;
 }
@@ -243,6 +247,7 @@ void Solver::Reset() {
 		edges[horizontal][row][col].dir = DIR_UNKNOWN;
 		edges[horizontal][row][col].same_dir = 0;
 	);
+	run_number = 0;
 
 	SoftReset();
 }
@@ -253,9 +258,10 @@ void Solver::SoftReset() {
 	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
 	finished = false;
 	going_back = false;
+	run_number++;
 
 	UpdateVisited();
-	Floodfill(false);
+	Floodfill(run_number != 1);
 }
 
 void Solver::Step() {
@@ -282,22 +288,25 @@ void Solver::Step() {
 
 	auto it = std::find(target_coords.begin(), target_coords.end(), coord);
 	if (it != target_coords.end()) {
-		target_coords.erase(it);
-
-		if (going_back) {
-			target_coords = GetUnvisitedPathCoords();
-		}
+		// Remove all occurences of coord from the target coords
+		do {
+			target_coords.erase(it);
+		} while ((it = std::find(target_coords.begin(), target_coords.end(), coord)) != target_coords.end());
 
 		if (target_coords.size() == 0) {
-			if (coord == starting_coord) {
-				finished = true;
-				target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
-			} else if (!going_back) {
-				// Explore a potentially better path before going back
+			if (going_back) {
+				if (coord == starting_coord) {
+					// After reaching the starting coord again
+					finished = true;
+					target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
+				} else {
+					// After exploring another possible path
+					target_coords = { starting_coord };
+				}
+			} else {
+				// After surveying the goal area
 				going_back = true;
 				target_coords = GetUnvisitedPathCoords();
-			} else {
-				target_coords = { starting_coord };
 			}
 		}
 
@@ -340,7 +349,7 @@ void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_fon
 		);
 	}
 	for (int i = 0; i < MAZE_COLS; i++) {
-		Vector2 p = maze->CornerToPos(Point(i, 16));
+		Vector2 p = maze->CornerToPos(Point(i, MAZE_ROWS));
 		GuiLabel(
 			ray::Rectangle(p.x + 10.0f, p.y, 50.0f, 50.0f),
 			std::to_string(i).c_str()

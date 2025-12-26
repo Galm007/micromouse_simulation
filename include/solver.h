@@ -23,6 +23,7 @@ private:
 	std::vector<std::tuple<bool, Point>> path;
 	bool finished;
 	bool going_back;
+	int run_number;
 
 	void UpdateVisited();
 	void Floodfill(bool visited_edges_only);

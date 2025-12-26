@@ -35,7 +35,7 @@ Point edit_wall_from = Point(0, 0);
 bool maze_is_editable = false;
 bool show_floodfill_vals = false;
 bool show_full_map = true;
-float solver_step_interval = 0.70f;
+float solver_step_interval = 0.80f;
 float step_timer = 0.0f;
 Font roboto;
 
