@@ -1,15 +1,16 @@
 #pragma once
 
+#include <cstdint>
 #include <raylib-cpp.hpp>
 
 namespace ray = raylib;
 
 class Point {
 public:
-	int x, y;
+	int8_t x, y;
 
-	Point(int x, int y);
-	Point(int a);
+	Point(int8_t x, int8_t y);
+	Point(int8_t a);
 	Point();
 	~Point();
 
@@ -23,10 +24,10 @@ public:
 	void operator *= (Point p);
 	Point operator / (Point p);
 	void operator /= (Point p);
-	Point operator * (int n);
-	void operator *= (int n);
-	Point operator / (int n);
-	void operator /= (int n);
+	Point operator * (int8_t n);
+	void operator *= (int8_t n);
+	Point operator / (int8_t n);
+	void operator /= (int8_t n);
 	bool operator == (Point p);
 	bool operator != (Point p);
 };

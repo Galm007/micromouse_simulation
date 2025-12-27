@@ -1,11 +1,11 @@
 #include "point.h"
 
-Point::Point(int x, int y) {
+Point::Point(int8_t x, int8_t y) {
 	this->x = x;
 	this->y = y;
 }
 
-Point::Point(int a) {
+Point::Point(int8_t a) {
 	this->x = this->y = a;
 }
 
@@ -53,20 +53,20 @@ void Point::operator /= (Point p) {
 	y /= p.y;
 }
 
-Point Point::operator * (int n) {
+Point Point::operator * (int8_t n) {
 	return Point(x * n, y * n);
 }
 
-void Point::operator *= (int n) {
+void Point::operator *= (int8_t n) {
 	x *= n;
 	y *= n;
 }
 
-Point Point::operator / (int n) {
+Point Point::operator / (int8_t n) {
 	return Point(x / n, y / n);
 }
 
-void Point::operator /= (int n) {
+void Point::operator /= (int8_t n) {
 	x /= n;
 	y /= n;
 }
