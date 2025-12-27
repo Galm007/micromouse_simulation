@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 #include "point.h"
 
-enum Direction {
+enum Direction : uint8_t {
 	DIR_UNKNOWN,
 
 	// Possible moves from horizontal cell edges

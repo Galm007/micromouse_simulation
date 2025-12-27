@@ -6,11 +6,14 @@
 #include "point.h"
 #include "direction.h"
 
+#define FF_VAL_TO_FLOAT(n) (((n) / 3.0f) - 1.0f)
+#define FF_VAL_FROM_FLOAT(x) (((x) + 1.0f) * 3.0f)
+
 struct Edge {
-	bool visited = false;
-	Direction dir = DIR_UNKNOWN;
-	float ff_val = -1.0f;
-	int same_dir = 0;
+	uint16_t ff_val : 10;
+	uint8_t same_dir : 6;
+	Direction dir : 7;
+	bool visited : 1;
 };
 
 class Solver {
@@ -19,7 +22,7 @@ private:
 	Maze known_maze = Maze(ray::Vector2(0.0f, 0.0f));
 	Maze* maze;
 
-	Edge edges[2][MAZE_ROWS + 1][MAZE_COLS + 1] = { }; // edges[horizontal][row][column]
+	Edge edges[2][MAZE_ROWS + 1][MAZE_COLS + 1] = { 0 }; // edges[horizontal][row][column]
 	std::vector<std::tuple<bool, Point>> path;
 	bool finished;
 	bool going_back;

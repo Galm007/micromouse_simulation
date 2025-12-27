@@ -58,9 +58,9 @@ void Solver::UpdateVisited() {
 void Solver::Floodfill(bool visited_edges_only) {
 	// Reset floodfill values and directions
 	FOREACH_EDGE(
-		edges[horizontal][row][col].ff_val = -1.0f;
-		edges[horizontal][row][col].dir = DIR_UNKNOWN;
+		edges[horizontal][row][col].ff_val = FF_VAL_FROM_FLOAT(-1.0f);
 		edges[horizontal][row][col].same_dir = 0;
+		edges[horizontal][row][col].dir = DIR_UNKNOWN;
 	);
 
 	// Populate queue with edges of current cell
@@ -72,7 +72,7 @@ void Solver::Floodfill(bool visited_edges_only) {
 		bool h = horizontals[i];
 		Point e = edge_coords[i];
 		if (!known_maze.WallAt(h, e)) {
-			edges[h][e.y][e.x].ff_val = 0.0f;
+			edges[h][e.y][e.x].ff_val = FF_VAL_FROM_FLOAT(0.0f);
 			edges[h][e.y][e.x].dir = (Direction)(1 + 3 * i);
 			q.push(std::make_tuple(h, e));
 		}
@@ -106,9 +106,9 @@ void Solver::Floodfill(bool visited_edges_only) {
 				if (within_bounds
 					&& (!visited_edges_only || (visited_edges_only && new_edge.visited))
 					&& !known_maze.WallAt(horizontals[i], new_coord)
-					&& new_edge.ff_val < 0.0f) {
+					&& new_edge.ff_val < FF_VAL_FROM_FLOAT(0.0f)) {
 					// Set edge values and push it to queue
-					new_edge.ff_val = edge.ff_val + (new_dir == normalized_dir ? 1.0f : 0.71f);
+					new_edge.ff_val = edge.ff_val + (new_dir == normalized_dir ? 3 : 2);
 					new_edge.dir = new_dir;
 					q.push(std::make_tuple(horizontals[i], new_coord));
 
@@ -139,14 +139,14 @@ void Solver::UpdatePath() {
 	Edge edge;
 
 	// Find starting edge
-	edge.ff_val = 10000.0f;
+	edge.ff_val = 255u;
 	bool horizontals[4];
 	Point edge_coords[4];
 	for (int i = 0; i < target_coords.size(); i++) {
 		GetEdgesOfCell(horizontals, edge_coords, target_coords[i]);
 		for (int i = 0; i < 4; i++) {
 			Edge new_edge = edges[horizontals[i]][edge_coords[i].y][edge_coords[i].x];
-			if (new_edge.ff_val >= 0.0f && new_edge.ff_val < edge.ff_val) {
+			if (new_edge.ff_val >= FF_VAL_FROM_FLOAT(0.0f) && new_edge.ff_val < edge.ff_val) {
 				edge_coord = edge_coords[i];
 				horizontal = horizontals[i];
 				edge = new_edge;
@@ -184,7 +184,7 @@ void Solver::UpdatePath() {
 
 				Edge new_edge = edges[horizontals[i]][new_coord.y][new_coord.x];
 				if (within_bounds
-					&& new_edge.ff_val >= 0.0f
+					&& new_edge.ff_val >= FF_VAL_FROM_FLOAT(0.0f)
 					&& new_edge.ff_val < from_edge.ff_val
 					&& ((j == 0 && SimilarDirections(from_edge.dir, new_edge.dir))
 						|| (j == 1 && new_edge.ff_val < edge.ff_val))) {
@@ -242,10 +242,10 @@ Solver::~Solver() {
 void Solver::Reset() {
 	known_maze.Clear();
 	FOREACH_EDGE(
-		edges[horizontal][row][col].visited = false;
-		edges[horizontal][row][col].ff_val = -1.0f;
-		edges[horizontal][row][col].dir = DIR_UNKNOWN;
+		edges[horizontal][row][col].ff_val = FF_VAL_FROM_FLOAT(-1.0f);
 		edges[horizontal][row][col].same_dir = 0;
+		edges[horizontal][row][col].dir = DIR_UNKNOWN;
+		edges[horizontal][row][col].visited = false;
 	);
 	run_number = 0;
 
@@ -388,16 +388,16 @@ void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_fon
 	for (int i = 0; i < MAZE_ROWS; i++) {
 		for (int j = 0; j < MAZE_COLS; j++) {
 			char buffer[16];
-			float x, y, ff_val;
+			float x, y, ff_val_f;
 			Vector2 p = maze->CornerToPos(Point(j, i));
 
 			// Horizontal floodfill values
-			if ((ff_val = edges[true][i][j].ff_val) >= 0.0f) {
+			if ((ff_val_f = FF_VAL_TO_FLOAT(edges[true][i][j].ff_val)) >= 0.0f) {
 				snprintf(
 					buffer,
 					sizeof(buffer),
 					"%.1f\n%s,%d",
-					ff_val,
+					ff_val_f,
 					DirToStr(edges[true][i][j].dir).c_str(),
 					edges[true][i][j].same_dir
 				);
@@ -412,12 +412,12 @@ void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_fon
 			}
 
 			// Vertical floodfill values
-			if ((ff_val = edges[false][i][j].ff_val) >= 0.0f) {
+			if ((ff_val_f = FF_VAL_TO_FLOAT(edges[false][i][j].ff_val)) >= 0.0f) {
 				snprintf(
 					buffer,
 					sizeof(buffer),
 					"%.1f\n%s,%d",
-					ff_val,
+					ff_val_f,
 					DirToStr(edges[false][i][j].dir).c_str(),
 					edges[false][i][j].same_dir
 				);
