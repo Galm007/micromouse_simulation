@@ -236,9 +236,10 @@ void Solver::Reset() {
 	FOREACH_EDGE(
 		edge.ff_val = FF_VAL_FROM_FLOAT(-1.0f);
 		edge.same_dir = 0;
-		edge.wall_exists = false;
 		edge.dir = DIR_UNKNOWN;
 		edge.visited = false;
+		edge.wall_exists = ((horizontal && col < MAZE_COLS && (row == 0 || row == MAZE_ROWS))
+			|| (!horizontal && row < MAZE_ROWS && (col == 0 || col == MAZE_COLS)));
 	);
 	run_number = 0;
 
@@ -328,7 +329,7 @@ void Solver::DrawPath(Color clr) {
 void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_font) {
 	// Draw known walls
 	FOREACH_EDGE(
-		if (edge.visited && edge.wall_exists) {
+		if (edge.wall_exists) {
 			ray::Vector2 from = pos + ray::Vector2(col, row) * MAZE_CELL_SIZE;
 			ray::Vector2 to = from + (horizontal
 				? ray::Vector2(MAZE_CELL_SIZE, 0.0f)
