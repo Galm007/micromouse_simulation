@@ -1,11 +1,7 @@
 #include <algorithm>
-#include <cstdio>
-#include <iostream>
 #include <raylib.h>
 #include <raygui.h>
 #include <queue>
-#include <string>
-#include <tuple>
 
 #include "solver.h"
 #include "direction.h"
@@ -331,7 +327,15 @@ void Solver::DrawPath(Color clr) {
 
 void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_font) {
 	// Draw known walls
-	// known_maze.Draw(BLACK, ColorAlpha(BLACK, 0.0f));
+	FOREACH_EDGE(
+		if (edge.visited && edge.wall_exists) {
+			ray::Vector2 from = pos + ray::Vector2(col, row) * MAZE_CELL_SIZE;
+			ray::Vector2 to = from + (horizontal
+				? ray::Vector2(MAZE_CELL_SIZE, 0.0f)
+				: ray::Vector2(0.0f, MAZE_CELL_SIZE));
+			DrawLineV(from, to, BLACK);
+		}
+	);
 
 	// Draw current coord
 	DrawCircleV(maze->CellToPos(coord), MAZE_CELL_SIZE * 0.4f, ORANGE);
