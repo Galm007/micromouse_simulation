@@ -9,7 +9,6 @@
 #include "point.h"
 #include "maze.h"
 #include "solver.h"
-#include "mouse.h"
 #include "console.h"
 
 namespace ray = raylib;
@@ -42,7 +41,6 @@ Font roboto;
 // Core entities
 Maze maze = Maze(ray::Vector2(100.0f, 80.0f));
 Solver solver = Solver(&maze, Point(0, 0));
-Mouse mouse = Mouse(&maze, Point(0, 0));
 
 // UI layout
 ray::Vector2 ui_anchor = ray::Vector2(SCREEN_WIDTH - 300.0f, 0.0f);
@@ -72,11 +70,7 @@ void PostUpdate() {
 	// Pan the view
 	if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
 		maze.position += GetMouseDelta();
-		mouse.position += GetMouseDelta();
 	}
-
-	mouse.Move(40 * GetFrameTime());
-	mouse.angle += GetFrameTime();
 }
 
 void Idle_Update() {
@@ -354,7 +348,6 @@ int main(int argc, char** argv) {
 			solver.Draw(maze.position, show_floodfill_vals, roboto);
 		}
 
-		mouse.Draw();
 		DrawUI();
 		EndDrawing();
 	}
