@@ -10,16 +10,16 @@
 #define FF_VAL_FROM_FLOAT(x) (((x) + 1.0f) * 3.0f)
 
 struct Edge {
-	uint16_t ff_val : 10;
-	uint8_t same_dir : 6;
+	uint16_t ff_val : 10; // (0 to 1023) / 3.0f - 1.0f maps to (-1.0f to 340.0f)
+	uint8_t same_dir : 7;
+	uint8_t wall_exists : 1;
 	Direction dir : 7;
-	bool visited : 1;
+	uint8_t visited : 1;
 };
 
 class Solver {
 private:
 	Point coord = Point(0, 0);
-	Maze known_maze = Maze(ray::Vector2(0.0f, 0.0f));
 	Maze* maze;
 
 	Edge edges[2][MAZE_ROWS + 1][MAZE_COLS + 1] = { 0 }; // edges[horizontal][row][column]
@@ -32,8 +32,7 @@ private:
 	void Floodfill(bool visited_edges_only);
 	void UpdatePath();
 	void DrawPath(Color clr);
-
-	std::vector<Point> GetUnvisitedPathCoords();
+	void GetUnvisitedPathCoords();
 
 public:
 	std::vector<Point> target_coords;

@@ -15,6 +15,7 @@
 		for (int col = 0; col <= MAZE_COLS; col++) {\
 			for (int horizontal = 0; horizontal < 2; horizontal++)\
 			{\
+				Edge& edge = edges[horizontal][row][col];\
 				code\
 			}\
 		}\
@@ -42,16 +43,16 @@ void Solver::UpdateVisited() {
 	edges[false][coord.y][coord.x + 1].visited = true;
 
 	if (maze->WallAt(true, coord)) {
-		known_maze.SetWalls(coord, coord + Point(1, 0), true);
+		edges[true][coord.y][coord.x].wall_exists = true;
 	}
 	if (maze->WallAt(true, coord + Point(0, 1))) {
-		known_maze.SetWalls(coord + Point(0, 1), coord + Point(1, 1), true);
+		edges[true][coord.y + 1][coord.x].wall_exists = true;
 	}
 	if (maze->WallAt(false, coord)) {
-		known_maze.SetWalls(coord, coord + Point(0, 1), true);
+		edges[false][coord.y][coord.x].wall_exists = true;
 	}
 	if (maze->WallAt(false, coord + Point(1, 0))) {
-		known_maze.SetWalls(coord + Point(1, 0), coord + Point(1, 1), true);
+		edges[false][coord.y][coord.x + 1].wall_exists = true;
 	}
 }
 
@@ -59,9 +60,9 @@ void Solver::UpdateVisited() {
 void Solver::Floodfill(bool visited_edges_only) {
 	// Reset floodfill values and directions
 	FOREACH_EDGE(
-		edges[horizontal][row][col].ff_val = FF_VAL_FROM_FLOAT(-1.0f);
-		edges[horizontal][row][col].same_dir = 0;
-		edges[horizontal][row][col].dir = DIR_UNKNOWN;
+		edge.ff_val = FF_VAL_FROM_FLOAT(-1.0f);
+		edge.same_dir = 0;
+		edge.dir = DIR_UNKNOWN;
 	);
 
 	// Populate queue with edges of current cell
@@ -72,9 +73,10 @@ void Solver::Floodfill(bool visited_edges_only) {
 	for (int i = 0; i < 4; i++) {
 		bool h = horizontals[i];
 		Point e = edge_coords[i];
-		if (!known_maze.WallAt(h, e)) {
-			edges[h][e.y][e.x].ff_val = FF_VAL_FROM_FLOAT(0.0f);
-			edges[h][e.y][e.x].dir = (Direction)(1 + 3 * i);
+		Edge& edge = edges[h][e.y][e.x];
+		if (!edge.wall_exists) {
+			edge.ff_val = FF_VAL_FROM_FLOAT(0.0f);
+			edge.dir = (Direction)(1 + 3 * i);
 			q.push(std::make_tuple(h, e));
 		}
 	}
@@ -106,7 +108,7 @@ void Solver::Floodfill(bool visited_edges_only) {
 
 				if (within_bounds
 					&& (!visited_edges_only || (visited_edges_only && new_edge.visited))
-					&& !known_maze.WallAt(horizontals[i], new_coord)
+					&& !new_edge.wall_exists
 					&& new_edge.ff_val < FF_VAL_FROM_FLOAT(0.0f)) {
 					// Set edge values and push it to queue
 					new_edge.ff_val = edge.ff_val + (new_dir == normalized_dir ? 3 : 2);
@@ -200,11 +202,10 @@ void Solver::UpdatePath() {
 }
 
 // Get the necessary coordinates to visit to validate a potentially better solution path
-std::vector<Point> Solver::GetUnvisitedPathCoords() {
+void Solver::GetUnvisitedPathCoords() {
 	std::vector<Point> unvisited_coords = { };
 
 	Point tmp_coord = coord;
-	std::vector<Point> tmp_target_coords = target_coords;
 
 	coord = starting_coord;
 	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
@@ -214,22 +215,17 @@ std::vector<Point> Solver::GetUnvisitedPathCoords() {
 		Point edge_coord = std::get<1>(path[i]);
 		if (!edges[horizontal][edge_coord.y][edge_coord.x].visited) {
 			unvisited_coords.push_back(edge_coord);
-			// unvisited_coords.push_back(edge_coord - (horizontal ? Point(0, 1) : Point(1, 0)));
 		}
 	}
 
 	coord = tmp_coord;
-	target_coords = tmp_target_coords;
-
-	if (unvisited_coords.size() == 0) {
-		unvisited_coords = { starting_coord };
+	target_coords = unvisited_coords;
+	if (target_coords.size() == 0) {
+		target_coords = { starting_coord };
 	}
-
-	return unvisited_coords;
 }
 
 Solver::Solver(Maze* maze, Point starting_coord) {
-	this->known_maze.position = maze->position;
 	this->maze = maze;
 	this->starting_coord = starting_coord;
 	Reset();
@@ -241,12 +237,12 @@ Solver::~Solver() {
 
 // Reset the conditions to where the solver does not know anything about the maze
 void Solver::Reset() {
-	known_maze.Clear();
 	FOREACH_EDGE(
-		edges[horizontal][row][col].ff_val = FF_VAL_FROM_FLOAT(-1.0f);
-		edges[horizontal][row][col].same_dir = 0;
-		edges[horizontal][row][col].dir = DIR_UNKNOWN;
-		edges[horizontal][row][col].visited = false;
+		edge.ff_val = FF_VAL_FROM_FLOAT(-1.0f);
+		edge.same_dir = 0;
+		edge.wall_exists = false;
+		edge.dir = DIR_UNKNOWN;
+		edge.visited = false;
 	);
 	run_number = 0;
 
@@ -273,7 +269,7 @@ void Solver::Step() {
 	if (maze->WallAt(horizontal, edge_coord)) {
 		UpdateVisited();
 		if (going_back) {
-			target_coords = GetUnvisitedPathCoords();
+			GetUnvisitedPathCoords();
 		}
 		Floodfill(false);
 
@@ -307,7 +303,7 @@ void Solver::Step() {
 			} else {
 				// After surveying the goal area
 				going_back = true;
-				target_coords = GetUnvisitedPathCoords();
+				GetUnvisitedPathCoords();
 			}
 		}
 
@@ -335,8 +331,7 @@ void Solver::DrawPath(Color clr) {
 
 void Solver::Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_font) {
 	// Draw known walls
-	known_maze.position = pos;
-	known_maze.Draw(BLACK, ColorAlpha(BLACK, 0.0f));
+	// known_maze.Draw(BLACK, ColorAlpha(BLACK, 0.0f));
 
 	// Draw current coord
 	DrawCircleV(maze->CellToPos(coord), MAZE_CELL_SIZE * 0.4f, ORANGE);
