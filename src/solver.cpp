@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdio>
+#include <iostream>
 #include <raylib.h>
 #include <raygui.h>
 #include <queue>
@@ -139,7 +140,7 @@ void Solver::UpdatePath() {
 	Edge edge;
 
 	// Find starting edge
-	edge.ff_val = 255u;
+	edge.ff_val = 0b1111111111;
 	bool horizontals[4];
 	Point edge_coords[4];
 	for (int i = 0; i < target_coords.size(); i++) {
