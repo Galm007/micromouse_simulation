@@ -7,7 +7,7 @@ Features Include:
 - Edit mazes with the built-in maze editor.
 - Run a diagonal maze solving algorithm.
 
-How to run (Linux):
+How to run (Linux with make):
 ```
 git clone https://github.com/Galm007/micromouse_simulation && cd micromouse_simulation
 mkdir build && cd build
@@ -15,6 +15,17 @@ cp ../resources/* .
 cmake ..
 make -j8
 ./micromouse_simulation
+```
+
+How to run (Windows with Visual Studio):
+```
+git clone https://github.com/Galm007/micromouse_simulation && cd micromouse_simulation
+mkdir build && cd build
+cp ../resources/* .
+cmake ..
+start devenv micromouse_simulation.sln
+
+# NOTE: Make sure to set Visual Studio's startup project to micromouse_simulation before pressing the run button
 ```
 
 <img width="1198" height="998" alt="Screenshot_20251228_170958" src="https://github.com/user-attachments/assets/d76626aa-ba4c-4d90-89e3-4a9bee733e82" />
