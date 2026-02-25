@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "point.h"
+#include "point.hpp"
 
 enum Direction : uint8_t {
 	DIR_UNKNOWN,

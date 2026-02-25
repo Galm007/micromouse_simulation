@@ -4,7 +4,7 @@
 #include <raylib.h>
 #include <raylib-cpp.hpp>
 
-#include "point.h"
+#include "point.hpp"
 
 namespace ray = raylib;
 

@@ -4,8 +4,8 @@
 #include <raylib.h>
 #include <raylib-cpp.hpp>
 
-#include "maze.h"
-#include "console.h"
+#include "maze.hpp"
+#include "console.hpp"
 
 namespace ray = raylib;
 

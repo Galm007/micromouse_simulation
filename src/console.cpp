@@ -3,7 +3,7 @@
 #include <raylib.h>
 #include <raygui.h>
 
-#include "console.h"
+#include "console.hpp"
 
 #define LINE_HEIGHT 25
 

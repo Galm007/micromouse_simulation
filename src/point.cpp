@@ -1,4 +1,4 @@
-#include "point.h"
+#include "point.hpp"
 
 Point::Point(int8_t x, int8_t y) {
 	this->x = x;

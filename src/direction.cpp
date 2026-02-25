@@ -1,5 +1,5 @@
-#include "direction.h"
-#include "console.h"
+#include "direction.hpp"
+#include "console.hpp"
 
 Direction NormalizeDir(Direction dir) {
 	switch (dir) {

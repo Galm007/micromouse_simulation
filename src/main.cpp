@@ -6,10 +6,10 @@
 #define GUI_WINDOW_FILE_DIALOG_IMPLEMENTATION
 #include <gui_window_file_dialog.h>
 
-#include "point.h"
-#include "maze.h"
-#include "solver.h"
-#include "console.h"
+#include "point.hpp"
+#include "maze.hpp"
+#include "solver.hpp"
+#include "console.hpp"
 
 namespace ray = raylib;
 

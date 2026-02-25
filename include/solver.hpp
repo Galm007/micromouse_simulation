@@ -2,9 +2,9 @@
 
 #include <tuple>
 
-#include "maze.h"
-#include "point.h"
-#include "direction.h"
+#include "maze.hpp"
+#include "point.hpp"
+#include "direction.hpp"
 
 #define FF_VAL_TO_FLOAT(n) (((n) / 3.0f) - 1.0f)
 #define FF_VAL_FROM_FLOAT(x) (((x) + 1.0f) * 3.0f)

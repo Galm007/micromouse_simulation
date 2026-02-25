@@ -3,8 +3,8 @@
 #include <raygui.h>
 #include <queue>
 
-#include "solver.h"
-#include "direction.h"
+#include "solver.hpp"
+#include "direction.hpp"
 
 #define FOREACH_EDGE(code) \
 	for (int row = 0; row <= MAZE_ROWS; row++) {\
