@@ -276,8 +276,7 @@ void Solver::Step() {
 	}
 
 	// Move and update known walls
-	Edge edge = edges[horizontal][edge_coord.y][edge_coord.x];
-	coord = DirToCell(edge_coord, edge.dir);
+	coord = DirToCell(edge_coord, edges[horizontal][edge_coord.y][edge_coord.x].dir);
 	UpdateVisited();
 
 	auto it = std::find(target_coords.begin(), target_coords.end(), coord);
@@ -303,9 +302,9 @@ void Solver::Step() {
 				GetUnvisitedPathCoords();
 			}
 		}
-
-		Floodfill(false);
 	}
+
+	Floodfill(false);
 }
 
 bool Solver::IsFinished() {
