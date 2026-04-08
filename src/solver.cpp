@@ -275,6 +275,7 @@ void Solver::SoftReset() {
 	Floodfill(run_number != 1);
 }
 
+// TODO: When going back, update target coords when a new wall blocks the path
 void Solver::Step() {
 	bool horizontal = std::get<0>(path.back());
 	Point edge_coord = std::get<1>(path.back());
@@ -283,6 +284,9 @@ void Solver::Step() {
 	// Move and update known walls
 	coord = DirToCell(edge_coord, edges[horizontal][edge_coord.y][edge_coord.x].dir);
 	if (FindSurroundingWalls()) {
+		if (going_back) {
+			UpdateTargetCoords();
+		}
 		Floodfill(false);
 	}
 
@@ -310,6 +314,8 @@ void Solver::Step() {
 				UpdateTargetCoords();
 			}
 		}
+
+		// Floodfill values need to be recalculated after target_coords is updated
 		Floodfill(false);
 	}
 }
