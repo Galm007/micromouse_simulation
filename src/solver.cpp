@@ -77,7 +77,7 @@ void Solver::Floodfill(bool visited_edges_only) {
 	);
 
 	// Populate queue with edges of current cell
-	std::queue<std::tuple<bool, Point>> q;
+	std::queue<PathNode> q;
 	bool horizontals[4];
 	Point edge_coords[4];
 	GetEdgesOfCell(horizontals, edge_coords, coord);
@@ -88,13 +88,13 @@ void Solver::Floodfill(bool visited_edges_only) {
 		if (!edge.wall_exists) {
 			edge.ff_val = FF_VAL_FROM_FLOAT(0.0f);
 			edge.dir = (Direction)(1 + 3 * i);
-			q.push(std::make_tuple(h, e));
+			q.push(PathNode(h, e));
 		}
 	}
 
 	while (!q.empty()) {
-		bool horizontal = std::get<0>(q.front());
-		Point edge_coord = std::get<1>(q.front());
+		bool horizontal = q.front().horizontal;
+		Point edge_coord = q.front().edge_coord;
 		q.pop();
 
 		// Prioritize making edges that share a common direction
@@ -124,7 +124,7 @@ void Solver::Floodfill(bool visited_edges_only) {
 					// Set edge values and push it to queue
 					new_edge.ff_val = edge.ff_val + (new_dir == normalized_dir ? 3 : 2);
 					new_edge.dir = new_dir;
-					q.push(std::make_tuple(horizontals[i], new_coord));
+					q.push(PathNode(horizontals[i], new_coord));
 
 					// Keep track of edges that share a common direction
 					if (SimilarDirections(new_edge.dir, edge.dir)) {
