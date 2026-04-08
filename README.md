@@ -13,7 +13,7 @@ git clone https://github.com/Galm007/micromouse_simulation && cd micromouse_simu
 mkdir build && cd build
 cp ../resources/* .
 cmake ..
-make -j8
+make -j$(nproc)
 ./micromouse_simulation
 ```
 
