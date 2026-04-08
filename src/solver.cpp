@@ -174,7 +174,7 @@ void Solver::UpdatePath() {
 		moved = false;
 
 		// Add to path
-		path.push_back(std::make_tuple(horizontal, edge_coord));
+		path.push_back(PathNode(horizontal, edge_coord));
 
 		// Find the other 3 edges of the cell to test
 		Direction normalized_dir = ReverseDir(NormalizeDir(edge.dir));
@@ -222,8 +222,8 @@ void Solver::UpdateTargetCoords() {
 	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
 	Floodfill(false);
 	for (int i = 0; i < path.size(); i++) {
-		bool horizontal = std::get<0>(path[i]);
-		Point edge_coord = std::get<1>(path[i]);
+		bool horizontal = path[i].horizontal;
+		Point edge_coord = path[i].edge_coord;
 		if (!edges[horizontal][edge_coord.y][edge_coord.x].visited) {
 			unvisited_coords.push_back(edge_coord);
 		}
@@ -275,10 +275,9 @@ void Solver::SoftReset() {
 	Floodfill(run_number != 1);
 }
 
-// TODO: When going back, update target coords when a new wall blocks the path
 void Solver::Step() {
-	bool horizontal = std::get<0>(path.back());
-	Point edge_coord = std::get<1>(path.back());
+	bool horizontal = path.back().horizontal;
+	Point edge_coord = path.back().edge_coord;
 	path.pop_back();
 
 	// Move and update known walls
@@ -327,8 +326,8 @@ bool Solver::IsFinished() {
 void Solver::DrawPath(Color clr) {
 	ray::Vector2 from = maze->CellToPos(coord);
 	for (int i = path.size() - 1; i >= 0; i--) {
-		bool horizontal = std::get<0>(path[i]);
-		Point edge_coord = std::get<1>(path[i]);
+		bool horizontal = path[i].horizontal;
+		Point edge_coord = path[i].edge_coord;
 		ray::Vector2 to = maze->CornerToPos(edge_coord) + (horizontal
 			? ray::Vector2(MAZE_CELL_SIZE / 2.0f, 0.0f)
 			: ray::Vector2(0.0f, MAZE_CELL_SIZE / 2.0f));

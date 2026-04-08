@@ -1,7 +1,5 @@
 #pragma once
 
-#include <tuple>
-
 #include "maze.hpp"
 #include "point.hpp"
 #include "direction.hpp"
@@ -17,13 +15,23 @@ struct Edge {
 	uint8_t visited : 1;
 };
 
+struct PathNode {
+	bool horizontal;
+	Point edge_coord;
+	
+	PathNode(bool horizontal, Point edge_coord) {
+		this->horizontal = horizontal;
+		this->edge_coord = edge_coord;
+	}
+};
+
 class Solver {
 private:
 	Point coord = Point(0, 0);
 	Maze* maze;
 
 	Edge edges[2][MAZE_ROWS + 1][MAZE_COLS + 1] = { 0 }; // edges[horizontal][row][column]
-	std::vector<std::tuple<bool, Point>> path;
+	std::vector<PathNode> path;
 	bool finished;
 	bool going_back;
 	int run_number;
