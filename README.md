@@ -28,6 +28,6 @@ start devenv micromouse_simulation.sln
 # NOTE: Make sure to set Visual Studio's startup project to micromouse_simulation before pressing the run button
 ```
 
-<img width="1198" height="998" alt="Screenshot_20251228_170958" src="https://github.com/user-attachments/assets/d76626aa-ba4c-4d90-89e3-4a9bee733e82" />
+<img width="1196" height="999" alt="Screenshot_20260408_131653" src="https://github.com/user-attachments/assets/bd96bbd3-2b67-49dc-9e27-94c4803866ed" />
 
-<img width="1197" height="997" alt="Screenshot_20251228_170911" src="https://github.com/user-attachments/assets/4a8f2c46-16ac-499a-b4b2-e9d839b818a8" />
+<img width="1197" height="1001" alt="Screenshot_20260408_131731" src="https://github.com/user-attachments/assets/f84cbd13-222b-4f90-aae8-63d62f79bc42" />
