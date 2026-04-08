@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iostream>
 #include <raylib.h>
 #include <raygui.h>
 #include <queue>
@@ -32,24 +33,38 @@ void GetEdgesOfCell(bool dest_horizontals[4], Point dest_edge_coords[4], Point c
 }
 
 // Update knowledge about existing walls based on current location
-void Solver::UpdateVisited() {
-	edges[true][coord.y][coord.x].visited = true;
-	edges[true][coord.y + 1][coord.x].visited = true;
-	edges[false][coord.y][coord.x].visited = true;
-	edges[false][coord.y][coord.x + 1].visited = true;
+// Returns true if a new wall is discovered
+bool Solver::FindSurroundingWalls() {
+	bool new_wall_discovered = false;
 
-	if (maze->WallAt(true, coord)) {
-		edges[true][coord.y][coord.x].wall_exists = true;
+ 	Edge& upper_edge = edges[true][coord.y][coord.x];
+	Edge& lower_edge = edges[true][coord.y + 1][coord.x];
+	Edge& left_edge = edges[false][coord.y][coord.x];
+	Edge& right_edge = edges[false][coord.y][coord.x + 1];
+
+	if (!upper_edge.visited && maze->WallAt(true, coord)) {
+		upper_edge.wall_exists = true;
+		new_wall_discovered = true;
 	}
-	if (maze->WallAt(true, coord + Point(0, 1))) {
-		edges[true][coord.y + 1][coord.x].wall_exists = true;
+	if (!lower_edge.visited && maze->WallAt(true, coord + Point(0, 1))) {
+		lower_edge.wall_exists = true;
+		new_wall_discovered = true;
 	}
-	if (maze->WallAt(false, coord)) {
-		edges[false][coord.y][coord.x].wall_exists = true;
+	if (!left_edge.visited && maze->WallAt(false, coord)) {
+		left_edge.wall_exists = true;
+		new_wall_discovered = true;
 	}
-	if (maze->WallAt(false, coord + Point(1, 0))) {
-		edges[false][coord.y][coord.x + 1].wall_exists = true;
+	if (!right_edge.visited && maze->WallAt(false, coord + Point(1, 0))) {
+		right_edge.wall_exists = true;
+		new_wall_discovered = true;
 	}
+
+	upper_edge.visited = true;
+	lower_edge.visited = true;
+	left_edge.visited = true;
+	right_edge.visited = true;
+
+	return new_wall_discovered;
 }
 
 // For a diagonal solver, flood starts from player
@@ -198,7 +213,7 @@ void Solver::UpdatePath() {
 }
 
 // Get the necessary coordinates to visit to validate a potentially better solution path
-void Solver::GetUnvisitedPathCoords() {
+void Solver::UpdateTargetCoords() {
 	std::vector<Point> unvisited_coords = { };
 
 	Point tmp_coord = coord;
@@ -234,12 +249,14 @@ Solver::~Solver() {
 // Reset the conditions to where the solver does not know anything about the maze
 void Solver::Reset() {
 	FOREACH_EDGE(
+		bool is_a_border_wall = ((horizontal && col < MAZE_COLS && (row == 0 || row == MAZE_ROWS))
+			|| (!horizontal && row < MAZE_ROWS && (col == 0 || col == MAZE_COLS)));
+
 		edge.ff_val = FF_VAL_FROM_FLOAT(-1.0f);
 		edge.same_dir = 0;
 		edge.dir = DIR_UNKNOWN;
-		edge.visited = false;
-		edge.wall_exists = ((horizontal && col < MAZE_COLS && (row == 0 || row == MAZE_ROWS))
-			|| (!horizontal && row < MAZE_ROWS && (col == 0 || col == MAZE_COLS)));
+		edge.visited = is_a_border_wall;
+		edge.wall_exists = is_a_border_wall;
 	);
 	run_number = 0;
 
@@ -254,7 +271,7 @@ void Solver::SoftReset() {
 	going_back = false;
 	run_number++;
 
-	UpdateVisited();
+	FindSurroundingWalls();
 	Floodfill(run_number != 1);
 }
 
@@ -263,23 +280,13 @@ void Solver::Step() {
 	Point edge_coord = std::get<1>(path.back());
 	path.pop_back();
 
-	if (maze->WallAt(horizontal, edge_coord)) {
-		UpdateVisited();
-		if (going_back) {
-			GetUnvisitedPathCoords();
-		}
+	// Move and update known walls
+	coord = DirToCell(edge_coord, edges[horizontal][edge_coord.y][edge_coord.x].dir);
+	if (FindSurroundingWalls()) {
 		Floodfill(false);
-
-		horizontal = std::get<0>(path.back());
-		edge_coord = std::get<1>(path.back());
-		path.pop_back();
 	}
 
-	// Move and update known walls
-	Edge edge = edges[horizontal][edge_coord.y][edge_coord.x];
-	coord = DirToCell(edge_coord, edge.dir);
-	UpdateVisited();
-
+	// If a target coordinate is reached
 	auto it = std::find(target_coords.begin(), target_coords.end(), coord);
 	if (it != target_coords.end()) {
 		// Remove all occurences of coord from the target coords
@@ -300,10 +307,9 @@ void Solver::Step() {
 			} else {
 				// After surveying the goal area
 				going_back = true;
-				GetUnvisitedPathCoords();
+				UpdateTargetCoords();
 			}
 		}
-
 		Floodfill(false);
 	}
 }

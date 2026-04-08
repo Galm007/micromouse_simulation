@@ -28,11 +28,11 @@ private:
 	bool going_back;
 	int run_number;
 
-	void UpdateVisited();
+	bool FindSurroundingWalls();
 	void Floodfill(bool visited_edges_only);
 	void UpdatePath();
 	void DrawPath(Color clr);
-	void GetUnvisitedPathCoords();
+	void UpdateTargetCoords();
 
 public:
 	std::vector<Point> target_coords;
