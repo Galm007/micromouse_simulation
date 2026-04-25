@@ -9,7 +9,6 @@ if (NOT raylib_FOUND)
     FetchContent_Declare(
         raylib
         GIT_REPOSITORY https://github.com/raysan5/raylib.git
-        GIT_TAG fbd83cafc7c51ecc38be7f7b19c185a42f333cb0 # Commit before raylib's breaking change
     )
     FetchContent_MakeAvailable(raylib)
 endif()
