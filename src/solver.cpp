@@ -1,11 +1,11 @@
 #include <algorithm>
-#include <iostream>
 #include <raylib.h>
 #include <raygui.h>
 #include <queue>
 
 #include "solver.hpp"
 #include "direction.hpp"
+#include "maze.hpp"
 
 #define FOREACH_EDGE(code) \
 	for (int row = 0; row <= MAZE_ROWS; row++) {\
@@ -219,7 +219,7 @@ void Solver::UpdateTargetCoords() {
 	Point tmp_coord = coord;
 
 	coord = starting_coord;
-	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
+	target_coords = maze->goals;
 	Floodfill(false);
 	for (int i = 0; i < path.size(); i++) {
 		bool horizontal = path[i].horizontal;
@@ -266,7 +266,7 @@ void Solver::Reset() {
 // Get ready for another run, without clearing the solver's knowledge of the maze
 void Solver::SoftReset() {
 	coord = starting_coord;
-	target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
+	target_coords = maze->goals;
 	finished = false;
 	going_back = false;
 	run_number++;
@@ -302,7 +302,7 @@ void Solver::Step() {
 				if (coord == starting_coord) {
 					// After reaching the starting coord again
 					finished = true;
-					target_coords = { Point(7, 7), Point(8, 7), Point(7, 8), Point(8, 8) };
+					target_coords = maze->goals;
 				} else {
 					// After exploring another possible path
 					target_coords = { starting_coord };

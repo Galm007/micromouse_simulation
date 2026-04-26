@@ -3,6 +3,7 @@
 #include <string>
 #include <raylib.h>
 #include <raylib-cpp.hpp>
+#include <vector>
 
 #include "maze.hpp"
 #include "console.hpp"
@@ -12,6 +13,20 @@ namespace ray = raylib;
 Maze::Maze(Vector2 position) {
 	this->position = position;
 	Clear();
+
+	// Set the goal of the maze to be in the center
+	this->goals = { };
+	Point mid = Point(MAZE_COLS / 2, MAZE_ROWS / 2);
+	this->goals.push_back(mid);
+	if (MAZE_COLS % 2 == 0) {
+		this->goals.push_back(mid - Point(1, 0));
+	}
+	if (MAZE_ROWS % 2 == 0) {
+		this->goals.push_back(mid - Point(0, 1));
+	}
+	if (MAZE_COLS % 2 == 0 && MAZE_ROWS % 2 == 0) {
+		this->goals.push_back(mid - Point(1, 1));
+	}
 }
 
 Maze::~Maze() {
@@ -128,14 +143,14 @@ void Maze::Draw(Color wall_clr, Color dot_clr) {
 }
 
 // .maz files:
-// - First 16 lines represent maze rows
-// - Each line's characters represent maze columns
-// - Each character is either 0, 1, 2, or 3:
-// - 0 means no top or left wall
-// - 1 means only left wall exists
-// - 2 means only top wall exists
-// - 3 means both left and top walls exist
-// - Lines 17 and 18 contain the solver's starting row and column, respectively
+// - Lines 1-2 lines represent the number of rows and columns of the maze
+// - Lines 3-4 lines contain the solver's starting row and column, respectively
+// - Next lines describe each row of the maze, with each character representing a cell:
+//     - Each character is either 0, 1, 2, or 3:
+//     - 0 means no top or left wall
+//     - 1 means only left wall exists
+//     - 2 means only top wall exists
+//     - 3 means both left and top walls exist
 // - Right and bottom edges of the maze will automatically have walls
 
 int Maze::SaveToFile(std::string filename, Point starting_coord) {
@@ -145,6 +160,16 @@ int Maze::SaveToFile(std::string filename, Point starting_coord) {
 		ConsoleError("Unable to open file: " + filename);
 		return 0;
 	}
+
+	ConsoleLog("Saving to file: " + filename);
+
+	// Save maze size
+	file << std::to_string(MAZE_ROWS) << '\n';
+	file << std::to_string(MAZE_COLS) << '\n';
+
+	// Save starting coords for solver
+	file << std::to_string(starting_coord.y) << '\n';
+	file << std::to_string(starting_coord.x) << '\n';
 
 	// Save walls
 	for (int row = 0; row < MAZE_ROWS; row++) {
@@ -167,10 +192,6 @@ int Maze::SaveToFile(std::string filename, Point starting_coord) {
 		file << line << '\n';
 	}
 
-	// Save starting coords for solver
-	file << std::to_string(starting_coord.y) << '\n';
-	file << std::to_string(starting_coord.x) << '\n';
-
 	ConsoleLog("Saved maze to: " + filename);
 
 	file.close();
@@ -182,6 +203,32 @@ int Maze::LoadFromFile(std::string filename, Point* starting_coord) {
 	file.open(filename);
 	if (!file.is_open()) {
 		ConsoleError("Unable to open file: " + filename);
+		return 0;
+	}
+
+	ConsoleLog("Loading file: " + filename);
+
+	// Verify maze size
+	std::string row_line, col_line;
+	if (std::getline(file, row_line) && std::getline(file, col_line)) {
+		if (std::stoi(row_line) != MAZE_ROWS || std::stoi(col_line) != MAZE_COLS) {
+			ConsoleError(
+				"Maze file's size (" + row_line + "x" + col_line
+				+ ") doesn't match simulation size ("
+				+ std::to_string(MAZE_ROWS) + "x" + std::to_string(MAZE_COLS) + ")");
+			return 0;
+		}
+	} else {
+		ConsoleError("No maze size detected in file: " + filename);
+		return 0;
+	}
+
+	// Load starting coord for solver
+	if (std::getline(file, row_line) && std::getline(file, col_line)) {
+		starting_coord->y = std::stoi(row_line);
+		starting_coord->x = std::stoi(col_line);
+	} else {
+		ConsoleLog("No starting coordinates detected in file: " + filename);
 		return 0;
 	}
 
@@ -217,16 +264,6 @@ int Maze::LoadFromFile(std::string filename, Point* starting_coord) {
 			}
 			col++;
 		}
-	}
-
-	// Load starting coord for solver
-	std::string row_line, col_line;
-	if (std::getline(file, row_line) && std::getline(file, col_line)) {
-		starting_coord->y = std::stoi(row_line);
-		starting_coord->x = std::stoi(col_line);
-	} else {
-		ConsoleLog("No starting coordinates detected in file: " + filename);
-		return 0;
 	}
 
 	ConsoleLog("Loaded maze: " + filename);

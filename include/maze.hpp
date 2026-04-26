@@ -3,6 +3,7 @@
 #include <string>
 #include <raylib.h>
 #include <raylib-cpp.hpp>
+#include <vector>
 
 #include "point.hpp"
 
@@ -19,6 +20,7 @@ private:
 	
 public:
 	ray::Vector2 position;
+	std::vector<Point> goals;
 
 	Maze(Vector2 position);
 	~Maze();

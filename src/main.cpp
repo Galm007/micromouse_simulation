@@ -243,7 +243,6 @@ int main(int argc, char** argv) {
 
 	// Maze file name can be put in as a command line argument
 	if (argc == 1) {
-		ConsoleLog("Restoring previous session...");
 		maze_filename = "backup.maz";
 		maze.LoadFromFile(maze_filename, &solver.starting_coord);
 		SetWindowTitle(maze_filename.c_str());
@@ -296,11 +295,13 @@ int main(int argc, char** argv) {
 		window.ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
 		// Color the target area green
-		DrawRectangleV(
-			maze.CornerToPos(Point(7, 7)),
-			ray::Vector2(2.0f, 2.0f) * MAZE_CELL_SIZE,
-			ColorAlpha(GREEN, 0.5f)
-		);
+		for (Point goal : maze.goals) {
+			DrawRectangleV(
+				maze.CornerToPos(goal),
+				ray::Vector2(MAZE_CELL_SIZE, MAZE_CELL_SIZE),
+				ColorAlpha(GREEN, 0.5f)
+			);
+		}
 
 		// Draw the maze
 		Color wall_clr = BLACK;
