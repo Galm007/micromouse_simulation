@@ -259,6 +259,7 @@ int main(int argc, char** argv) {
 	file_dialog_state = InitGuiWindowFileDialog(GetWorkingDirectory());
 	file_dialog_state.windowBounds = ray::Rectangle(100.0f, 250.0f, 1000.0f, 500.0f);
 	file_dialog_state.saveFileMode = true;
+    	strcpy(file_dialog_state.filterExt, ".maz");
 
 	// Load Roboto font
 	roboto = LoadFont("../resources/Roboto-Regular.ttf");
