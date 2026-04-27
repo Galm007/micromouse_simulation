@@ -120,7 +120,9 @@ void Solver::Floodfill(bool visited_edges_only) {
 				if (within_bounds
 					&& (!visited_edges_only || (visited_edges_only && new_edge.visited))
 					&& !new_edge.wall_exists
-					&& new_edge.ff_val < FF_VAL_FROM_FLOAT(0.0f)) {
+					&& (new_edge.ff_val < FF_VAL_FROM_FLOAT(0.0f)
+						|| edge.dir == NormalizeDir(new_edge.dir)
+						|| edge.dir == ReverseDir(new_edge.dir))) {
 					// Set edge values and push it to queue
 					new_edge.ff_val = edge.ff_val + (new_dir == normalized_dir ? 3 : 2);
 					new_edge.dir = new_dir;
