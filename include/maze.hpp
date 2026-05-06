@@ -9,8 +9,8 @@
 
 namespace ray = raylib;
 
-#define MAZE_ROWS 16
-#define MAZE_COLS 16
+#define MAZE_ROWS 6
+#define MAZE_COLS 6
 #define MAZE_CELL_SIZE 45
 
 class Maze {
