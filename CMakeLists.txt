@@ -25,7 +25,7 @@ if (NOT raylib_cpp_FOUND)
     FetchContent_MakeAvailable(raylib_cpp)
 endif()
 
-file(GLOB SRCS src/*.cpp)
+file(GLOB_RECURSE SRCS src/*.cpp)
 add_executable(${PROJECT_NAME} ${SRCS})
 target_include_directories(${PROJECT_NAME} PRIVATE include lib)
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib raylib_cpp)
