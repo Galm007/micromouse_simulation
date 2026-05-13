@@ -3,7 +3,7 @@
 #include <raygui.h>
 #include <queue>
 
-#include "diagonal_solver.hpp"
+#include "solver/diagonal_solver.hpp"
 #include "direction.hpp"
 #include "maze.hpp"
 

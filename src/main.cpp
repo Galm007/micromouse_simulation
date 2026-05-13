@@ -8,8 +8,9 @@
 
 #include "point.hpp"
 #include "maze.hpp"
-#include "diagonal_solver.hpp"
 #include "console.hpp"
+#include "solver/diagonal_solver.hpp"
+#include "solver/simple_solver.hpp"
 
 namespace ray = raylib;
 
@@ -40,7 +41,10 @@ Font roboto;
 
 // Core entities
 Maze maze = Maze(ray::Vector2(100.0f, 80.0f));
-DiagonalSolver solver = DiagonalSolver(&maze, Point(0, 0));
+DiagonalSolver diagonal_solver = DiagonalSolver(&maze, Point(0, 0));
+SimpleSolver   simple_solver   = SimpleSolver(&maze, Point(0, 0));
+Solver* solver = &diagonal_solver;
+bool use_diagonal_solver = true;
 
 // UI layout
 ray::Vector2 ui_anchor = ray::Vector2(SCREEN_WIDTH - 300.0f, 0.0f);
@@ -51,14 +55,15 @@ ray::Rectangle ui_layout_recs[] = {
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 110.0f, 280.0f, 50.0f), // Save Maze Layout Button
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 930.0f, 280.0f, 50.0f), // Edit Maze Toggle
 	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 870.0f, 280.0f, 50.0f), // Clear Maze
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 190.0f, 280.0f, 50.0f), // Run Solver
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 490.0f, 280.0f, 50.0f), // Stop Solver
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 260.0f, 30.0f, 30.0f), // Show FloodFill Values
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 320.0f, 30.0f, 30.0f), // Show Full Map
-	ray::Rectangle(ui_anchor.x + 70.0f, ui_anchor.y + 380.0f, 160.0f, 30.0f), // Solver Speed Slider
-	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 430.0f, 280.0f, 50.0f), // Skip Animation
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 190.0f + 60.0f, 280.0f, 50.0f), // Run Solver
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 490.0f + 60.0f, 280.0f, 50.0f), // Stop Solver
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 260.0f + 60.0f, 30.0f, 30.0f), // Show FloodFill Values
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 320.0f + 60.0f, 30.0f, 30.0f), // Show Full Map
+	ray::Rectangle(ui_anchor.x + 70.0f, ui_anchor.y + 380.0f + 60.0f, 160.0f, 30.0f), // Solver Speed Slider
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 430.0f + 60.0f, 280.0f, 50.0f), // Skip Animation
 	ray::Rectangle(console_anchor.x, console_anchor.y, 900.0f, 150.0f), // Console
-	ray::Rectangle(console_anchor.x + 820.0f, console_anchor.y + 2.0f, 70.0f, 20.0f) // Clear Console
+	ray::Rectangle(console_anchor.x + 820.0f, console_anchor.y + 2.0f, 70.0f, 20.0f), // Clear Console
+	ray::Rectangle(ui_anchor.x + 10.0f, ui_anchor.y + 190.0f, 280.0f, 50.0f) // Solver Type Toggle
 };
 GuiWindowFileDialogState file_dialog_state;
 
@@ -96,7 +101,7 @@ void Idle_Update() {
 					return;
 				}
 			}
-		} else if (mouse_coord == solver.starting_coord && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+		} else if (mouse_coord == solver->starting_coord && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 			// Control for dragging the starting coord somewhere else
 			state = MOVING_STARTING_COORD;
 		}
@@ -122,7 +127,7 @@ void DeletingWall_Update() {
 void MovingStartingCoord_Update() {
 	ray::Vector2 m = GetMousePosition();
 	if (m.x < ui_anchor.x && maze.Contains(m) && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-		solver.starting_coord = Point(
+		solver->starting_coord = Point(
 			(m.x - maze.position.x) / MAZE_CELL_SIZE,
 			(m.y - maze.position.y) / MAZE_CELL_SIZE
 		);
@@ -140,13 +145,13 @@ void FileDialogLogic() {
 
 			if (state == SAVING_MAZE) {
 				// Save maze layout and starting position to file
-				maze.SaveToFile(filename, solver.starting_coord);
+				maze.SaveToFile(filename, solver->starting_coord);
 				maze_filename = filename;
 				SetWindowTitle(file_dialog_state.fileNameText);
 			} else if (state == LOADING_MAZE) {
 				// Load maze layout and starting position from file
 				if (ray::FileExists(filename)) {
-					maze.LoadFromFile(filename, &solver.starting_coord);
+					maze.LoadFromFile(filename, &solver->starting_coord);
 					maze_filename = filename;
 					SetWindowTitle(file_dialog_state.fileNameText);
 				} else {
@@ -169,9 +174,9 @@ void FileDialogLogic() {
 }
 
 void SolvingMaze_Update() {
-	if (!solver.IsFinished() && (step_timer -= GetFrameTime()) <= 0.0f) {
+	if (!solver->IsFinished() && (step_timer -= GetFrameTime()) <= 0.0f) {
 		step_timer = 1.0f - solver_step_interval;
-		solver.Step();
+		solver->Step();
 	}
 }
 
@@ -198,20 +203,26 @@ void DrawUI() {
 			maze.Clear();
 		}
 	}
-	if (state == SOLVING_MAZE && !solver.IsFinished()) {
+	if (state == SOLVING_MAZE && !solver->IsFinished()) {
 		GuiSetState(STATE_DISABLED);
 	}
 	if (!maze_is_editable && GuiButton(ui_layout_recs[5], "RUN SOLVER")) {
 		if (state == SOLVING_MAZE) {
-			if (solver.IsFinished()) {
-				solver.SoftReset();
+			if (solver->IsFinished()) {
+				solver->SoftReset();
 			}
 		} else {
-			solver.Reset();
+			solver->Reset();
 			maze_is_editable = false;
 			step_timer = 0.5f;
 			state = SOLVING_MAZE;
 		}
+	}
+	if (!maze_is_editable && GuiButton(ui_layout_recs[13], use_diagonal_solver ? "SOLVER: DIAGONAL" : "SOLVER: SIMPLE")) {
+		Point start_coord = solver->starting_coord;
+		use_diagonal_solver = !use_diagonal_solver;
+		solver = use_diagonal_solver ? (Solver*)&diagonal_solver : (Solver*)&simple_solver;
+		solver->starting_coord = start_coord;
 	}
 	GuiSetState(STATE_NORMAL);
 	if (state == SOLVING_MAZE) {
@@ -222,8 +233,8 @@ void DrawUI() {
 		GuiCheckBox(ui_layout_recs[8], "Show Full Map", &show_full_map);
 		GuiSlider(ui_layout_recs[9], "SLOW", "FAST", &solver_step_interval, 0.1f, 1.0f);
 		if (GuiButton(ui_layout_recs[10], "SKIP ANIMATION")) {
-			while (!solver.IsFinished()) {
-				solver.Step();
+			while (!solver->IsFinished()) {
+				solver->Step();
 			}
 		}
 	}
@@ -244,11 +255,11 @@ int main(int argc, char** argv) {
 	// Maze file name can be put in as a command line argument
 	if (argc == 1) {
 		maze_filename = "backup.maz";
-		maze.LoadFromFile(maze_filename, &solver.starting_coord);
+		maze.LoadFromFile(maze_filename, &solver->starting_coord);
 		SetWindowTitle(maze_filename.c_str());
 	} else if (argc == 2) {
 		maze_filename = argv[1];
-		maze.LoadFromFile(maze_filename, &solver.starting_coord);
+		maze.LoadFromFile(maze_filename, &solver->starting_coord);
 		SetWindowTitle(maze_filename.c_str());
 	} else {
 		std::cout << "Too many input arguments!" << std::endl;
@@ -339,7 +350,7 @@ int main(int argc, char** argv) {
 			DrawCircleV(
 				state == MOVING_STARTING_COORD
 					? GetMousePosition()
-					: maze.CellToPos(solver.starting_coord),
+					: maze.CellToPos(solver->starting_coord),
 				MAZE_CELL_SIZE * 0.4f,
 				ORANGE
 			);
@@ -347,13 +358,13 @@ int main(int argc, char** argv) {
 
 		// Draw the solver on top of the maze
 		if (state == SOLVING_MAZE) {
-			solver.Draw(maze.position, show_floodfill_vals, roboto);
+			solver->Draw(maze.position, show_floodfill_vals, roboto);
 		}
 
 		DrawUI();
 		EndDrawing();
 	}
 
-	maze.SaveToFile("backup.maz", solver.starting_coord);
+	maze.SaveToFile("backup.maz", solver->starting_coord);
 	return 0;
 }
