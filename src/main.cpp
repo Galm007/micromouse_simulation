@@ -8,7 +8,7 @@
 
 #include "point.hpp"
 #include "maze.hpp"
-#include "solver.hpp"
+#include "diagonal_solver.hpp"
 #include "console.hpp"
 
 namespace ray = raylib;
@@ -40,7 +40,7 @@ Font roboto;
 
 // Core entities
 Maze maze = Maze(ray::Vector2(100.0f, 80.0f));
-Solver solver = Solver(&maze, Point(0, 0));
+DiagonalSolver solver = DiagonalSolver(&maze, Point(0, 0));
 
 // UI layout
 ray::Vector2 ui_anchor = ray::Vector2(SCREEN_WIDTH - 300.0f, 0.0f);

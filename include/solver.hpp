@@ -2,56 +2,15 @@
 
 #include "maze.hpp"
 #include "point.hpp"
-#include "direction.hpp"
-
-#define FF_VAL_TO_FLOAT(n) (((n) / 3.0f) - 1.0f)
-#define FF_VAL_FROM_FLOAT(x) (((x) + 1.0f) * 3.0f)
-
-struct Edge {
-	uint16_t ff_val : 10; // (0 to 1023) / 3.0f - 1.0f maps to (-1.0f to 340.0f)
-	uint8_t same_dir : 7;
-	uint8_t wall_exists : 1;
-	Direction dir : 7;
-	uint8_t visited : 1;
-};
-
-struct PathNode {
-	bool horizontal;
-	Point edge_coord;
-	
-	PathNode(bool horizontal, Point edge_coord) {
-		this->horizontal = horizontal;
-		this->edge_coord = edge_coord;
-	}
-};
 
 class Solver {
-private:
-	Point coord = Point(0, 0);
-	Maze* maze;
-
-	Edge edges[2][MAZE_ROWS + 1][MAZE_COLS + 1] = { 0 }; // edges[horizontal][row][column]
-	std::vector<PathNode> path;
-	bool finished;
-	bool going_back;
-	int run_number;
-
-	bool FindSurroundingWalls();
-	void Floodfill(bool visited_edges_only);
-	void UpdatePath();
-	void DrawPath(Color clr);
-	void UpdateTargetCoords();
-
 public:
-	std::vector<Point> target_coords;
 	Point starting_coord = Point(0, 0);
 
-	Solver(Maze* maze, Point starting_coord);
-	~Solver();
-
-	void Reset();
-	void SoftReset();
-	void Step();
-	bool IsFinished();
-	void Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_font);
+	virtual ~Solver() = default;
+	virtual void Reset() = 0;
+	virtual void SoftReset() = 0;
+	virtual void Step() = 0;
+	virtual bool IsFinished() = 0;
+	virtual void Draw(ray::Vector2 pos, bool show_floodfill_vals, Font floodfill_font) = 0;
 };
